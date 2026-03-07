@@ -5,6 +5,8 @@ zerosonesfun-flarum-log:
   forum:
     # Fallback when no custom button label is set (use {count} as placeholder)
     drinking_button: '{count} Drinking'
+    # Shown when user clicks again before cooldown (use {minutes} as placeholder)
+    cooldown_message: You can only add to the live count every {minutes} minutes.
 
   admin:
     button_label_label: Button label

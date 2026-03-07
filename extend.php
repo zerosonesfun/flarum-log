@@ -35,6 +35,10 @@ return [
             $minutes = (int) $settings->get('zerosonesfun-flarum-log.cooldown_minutes', 30) ?: 30;
             $minutes = max(1, min(1440, $minutes));
             return DrinkClick::currentCount($minutes);
+        })
+        ->attribute('drinkDirectLinksEnabled', function (ForumSerializer $serializer) {
+            $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
+            return $extensions->isEnabled('fof-direct-links');
         }),
 
     (new Extend\Locales(__DIR__ . '/locale')),

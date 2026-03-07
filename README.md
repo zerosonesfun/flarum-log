@@ -40,7 +40,11 @@ If you use [flarum/tags](https://github.com/flarum/tags):
 1. Enable the **Tags** extension.
 2. Create a tag with the slug you set in **Log tag slug** (default **`log`**) in Administration → Tags. The extension does not create the tag for you (tags table layout can vary by site).
 
-New “Log - date” discussions started from the Drinking button are tagged with the configured tag automatically.
+New “Log - date” discussions started from the Drinking button are tagged with the configured tag automatically. **This extension never deletes or modifies existing tags**—it only attaches the configured tag to new "Log - date" discussions when they are created.
+
+### Composer opening with the Log tag pre-selected
+
+To have the composer open with the **Log tag already selected**, install [FoF Direct Links](https://github.com/FriendsOfFlarum/direct-links). When **Log tag slug** is set, Drink Log navigates to `/composer?title=...&primary_tag=your-slug`, which Direct Links uses to open the composer with title and tag pre-filled. Without Direct Links, the composer still opens in-app with the title set; the tag is applied when you post (backend attaches it to "Log - date" discussions).
 
 ## Building the frontend (developers)
 

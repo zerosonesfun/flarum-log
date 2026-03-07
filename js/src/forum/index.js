@@ -27,6 +27,8 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   });
 
   IndexPage.prototype.drinkLogAction = function () {
+    const cooldownMinutes = Number(app.forum.attribute('drinkCooldownMinutes')) || 30;
+    const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
     app
       .request({
         method: 'POST',
@@ -36,14 +38,18 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
         const data = response.data;
         app.forum.pushAttributes({ drinkCount: data.count });
         m.redraw();
-        openLogComposer();
+        openLogComposerOrRedirect(tagSlug);
       })
       .catch((err) => {
         if (err.status === 429 && err.response && err.response.data) {
           app.forum.pushAttributes({ drinkCount: err.response.data.count });
           m.redraw();
+          const message = app.translator.trans('zerosonesfun-flarum-log.forum.cooldown_message', {
+            minutes: cooldownMinutes,
+          });
+          app.alerts.show({ type: 'error' }, message);
         }
-        openLogComposer();
+        openLogComposerOrRedirect(tagSlug);
       });
   };
 
@@ -54,29 +60,31 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return (m < 10 ? '0' : '') + m + '/' + (day < 10 ? '0' : '') + day + '/' + y;
   }
 
-  function openLogComposer() {
+  /**
+   * If FoF Direct Links is enabled and we have a tag slug, use URL so Direct Links
+   * opens the composer with title and tag pre-filled. Otherwise open composer in-app
+   * with title set (user can add tag manually).
+   */
+  function openLogComposerOrRedirect(tagSlug) {
     const title = 'Log - ' + formatLogDate(new Date());
+    const directLinksEnabled = !!app.forum.attribute('drinkDirectLinksEnabled');
+    if (directLinksEnabled && tagSlug) {
+      const baseUrl = (app.forum.attribute('baseUrl') || '').replace(/\/$/, '');
+      const params = new URLSearchParams({ title, primary_tag: tagSlug });
+      window.location.href = baseUrl + '/composer?' + params.toString();
+      return;
+    }
+    openLogComposer(title);
+  }
+
+  function openLogComposer(title) {
     app.composer.load(DiscussionComposer, {
       user: app.session.user,
     });
     app.composer.show();
-    // Defer so Tags extension's DiscussionComposer oninit runs first (adds composer.fields.tags)
-    setTimeout(() => {
-      if (app.composer.fields) {
-        if (typeof app.composer.fields.title === 'function') {
-          app.composer.fields.title(title);
-        }
-        // Set Log tag from settings (same as FoF Direct Links primary_tag / flarum/tags addTagComposer)
-        const tagSlug = app.forum.attribute('drinkLogTagSlug');
-        if (tagSlug && app.store.has('tags')) {
-          const tag = app.store.getBy('tags', 'slug', tagSlug);
-          if (tag) {
-            const parent = tag.parent();
-            app.composer.fields.tags = parent ? [parent, tag] : [tag];
-          }
-        }
-      }
-      m.redraw();
-    }, 0);
+    if (app.composer.fields && typeof app.composer.fields.title === 'function') {
+      app.composer.fields.title(title);
+    }
+    m.redraw();
   }
 });
