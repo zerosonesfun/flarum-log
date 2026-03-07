@@ -44,7 +44,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
         if (err.status === 429 && err.response && err.response.data) {
           app.forum.pushAttributes({ drinkCount: err.response.data.count });
           m.redraw();
-          const message = app.translator.trans('zerosonesfun-flarum-log.forum.cooldown_message', {
+          const message = app.translator.trans('zerosonesfun-log.forum.cooldown_message', {
             minutes: cooldownMinutes,
           });
           app.alerts.show({ type: 'error' }, message);

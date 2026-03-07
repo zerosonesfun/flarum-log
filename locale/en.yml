@@ -1,24 +1,7 @@
-# Drink Log extension – English
-# See https://docs.flarum.org/extend/i18n for namespacing and key format.
-# Admin uses extension id "zerosonesfun-log"; forum/composer use "zerosonesfun-flarum-log".
-# Both namespaces included so translations resolve in admin and forum.
-
-zerosonesfun-flarum-log:
-  forum:
-    drinking_button: '{count} Drinking'
-    cooldown_message: You can only add to the live count every {minutes} minutes.
-  admin:
-    button_label_label: Button label
-    button_label_help: "Text for the drinking button. Use {count} as placeholder for the number (e.g. \"{count} Drinking\")."
-    cooldown_minutes_label: Cooldown (minutes)
-    cooldown_minutes_help: "How many minutes before a user can click again (1–1440)."
-    log_tag_slug_label: Log tag slug
-    log_tag_slug_help: "Tag slug to attach to new \"Log - date\" discussions when the Tags extension is enabled. Leave empty to skip auto-tagging."
+# Drink Log – English
+# Top-level key must exactly match extension ID (zerosonesfun-log). See Flarum i18n docs.
 
 zerosonesfun-log:
-  forum:
-    drinking_button: '{count} Drinking'
-    cooldown_message: You can only add to the live count every {minutes} minutes.
   admin:
     button_label_label: Button label
     button_label_help: "Text for the drinking button. Use {count} as placeholder for the number (e.g. \"{count} Drinking\")."
@@ -26,3 +9,6 @@ zerosonesfun-log:
     cooldown_minutes_help: "How many minutes before a user can click again (1–1440)."
     log_tag_slug_label: Log tag slug
     log_tag_slug_help: "Tag slug to attach to new \"Log - date\" discussions when the Tags extension is enabled. Leave empty to skip auto-tagging."
+  forum:
+    drinking_button: '{count} Drinking'
+    cooldown_message: You can only add to the live count every {minutes} minutes.
