@@ -60,20 +60,23 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       user: app.session.user,
     });
     app.composer.show();
-    if (app.composer.fields) {
-      if (typeof app.composer.fields.title === 'function') {
-        app.composer.fields.title(title);
-      }
-      // Set Log tag from settings (like FoF Direct Links primary_tag)
-      const tagSlug = app.forum.attribute('drinkLogTagSlug');
-      if (tagSlug && app.store.has('tags')) {
-        const tag = app.store.getBy('tags', 'slug', tagSlug);
-        if (tag) {
-          const parent = tag.parent();
-          app.composer.fields.tags = parent ? [parent, tag] : [tag];
+    // Defer so Tags extension's DiscussionComposer oninit runs first (adds composer.fields.tags)
+    setTimeout(() => {
+      if (app.composer.fields) {
+        if (typeof app.composer.fields.title === 'function') {
+          app.composer.fields.title(title);
+        }
+        // Set Log tag from settings (same as FoF Direct Links primary_tag / flarum/tags addTagComposer)
+        const tagSlug = app.forum.attribute('drinkLogTagSlug');
+        if (tagSlug && app.store.has('tags')) {
+          const tag = app.store.getBy('tags', 'slug', tagSlug);
+          if (tag) {
+            const parent = tag.parent();
+            app.composer.fields.tags = parent ? [parent, tag] : [tag];
+          }
         }
       }
-    }
-    m.redraw();
+      m.redraw();
+    }, 0);
   }
 });
