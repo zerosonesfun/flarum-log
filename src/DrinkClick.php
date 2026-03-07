@@ -30,7 +30,7 @@ class DrinkClick extends AbstractModel
     public static function currentCount(int $minutes = self::DEFAULT_COOLDOWN_MINUTES): int
     {
         $minutes = max(1, $minutes);
-        $cutoff = now()->subMinutes($minutes);
+        $cutoff = \now()->subMinutes($minutes);
 
         return static::query()
             ->where('clicked_at', '>', $cutoff)
@@ -45,7 +45,7 @@ class DrinkClick extends AbstractModel
     public static function hasRecentClick(int $userId, int $minutes = self::DEFAULT_COOLDOWN_MINUTES): bool
     {
         $minutes = max(1, $minutes);
-        $cutoff = now()->subMinutes($minutes);
+        $cutoff = \now()->subMinutes($minutes);
 
         return static::query()
             ->where('user_id', $userId)
@@ -66,7 +66,7 @@ class DrinkClick extends AbstractModel
 
         $click = new static();
         $click->user_id = $userId;
-        $click->clicked_at = now();
+        $click->clicked_at = \now();
         $click->save();
 
         return true;
