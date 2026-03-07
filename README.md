@@ -38,9 +38,7 @@ In **Administration → Extensions → Drink Log**, you can configure:
 If you use [flarum/tags](https://github.com/flarum/tags):
 
 1. Enable the **Tags** extension.
-2. Either:
-   - Create a tag with the slug you set in **Log tag slug** (default **`log`**), or  
-   - Let the extension create it for you: a migration creates a **Log** tag (slug `log`) when the Tags extension is present. You can change which tag is used in the extension settings.
+2. Create a tag with the slug you set in **Log tag slug** (default **`log`**) in Administration → Tags. The extension does not create the tag for you (tags table layout can vary by site).
 
 New “Log - date” discussions started from the Drinking button are tagged with the configured tag automatically.
 
