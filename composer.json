@@ -1,0 +1,33 @@
+{
+    "name": "zerosonesfun/flarum-log",
+    "description": "Drink Log: track who's drinking and open a log discussion with one click.",
+    "type": "flarum-extension",
+    "keywords": ["flarum", "extension", "drink", "log"],
+    "license": "MIT",
+    "support": {
+        "source": "https://github.com/zerosonesfun/flarum-log",
+        "issues": "https://github.com/zerosonesfun/flarum-log/issues"
+    },
+    "require": {
+        "flarum/core": "^1.8.0"
+    },
+    "require-dev": {
+        "flarum/testing": "^1.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ZerosOnesFun\\Drinks\\": "src/"
+        }
+    },
+    "extra": {
+        "flarum-extension": {
+            "title": "Drink Log",
+            "icon": {
+                "name": "fas fa-wine-glass-alt",
+                "backgroundColor": "#5c4d79",
+                "color": "#fff"
+            },
+            "optional-dependencies": ["flarum/tags"]
+        }
+    }
+}
