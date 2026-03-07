@@ -62,7 +62,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
 
   /**
    * If FoF Direct Links is enabled and we have a tag slug, use URL so Direct Links
-   * opens the composer with title and tag pre-filled. Otherwise open composer in-app
+   * opens the composer with title, tag, and body pre-filled. Otherwise open composer in-app
    * with title set (user can add tag manually).
    */
   function openLogComposerOrRedirect(tagSlug) {
@@ -70,8 +70,13 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     const directLinksEnabled = !!app.forum.attribute('drinkDirectLinksEnabled');
     if (directLinksEnabled && tagSlug) {
       const baseUrl = (app.forum.attribute('baseUrl') || '').replace(/\/$/, '');
-      const params = new URLSearchParams({ title, primary_tag: tagSlug });
-      window.location.href = baseUrl + '/composer?' + params.toString();
+      const content = '`Date` \n`Time` \n`Location` \n`Amount` \n`Variety` ';
+      const q = [
+        'title=' + encodeURIComponent(title),
+        'primary_tag=' + encodeURIComponent(tagSlug),
+        'content=' + encodeURIComponent(content),
+      ].join('&');
+      window.location.href = baseUrl + '/composer?' + q;
       return;
     }
     openLogComposer(title);
