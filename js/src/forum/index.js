@@ -27,13 +27,15 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   });
 
   IndexPage.prototype.drinkLogAction = function () {
-    const cooldownMinutes = Number(app.forum.attribute('drinkCooldownMinutes')) || 30;
     const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
     app
-      .request({
-        method: 'POST',
-        url: app.forum.attribute('apiUrl') + '/flarum-log',
-      })
+      .request(
+        {
+          method: 'POST',
+          url: app.forum.attribute('apiUrl') + '/flarum-log',
+        },
+        { errorMessage: false }
+      )
       .then((response) => {
         const data = response.data;
         app.forum.pushAttributes({ drinkCount: data.count });
@@ -44,10 +46,6 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
         if (err.status === 429 && err.response && err.response.data) {
           app.forum.pushAttributes({ drinkCount: err.response.data.count });
           m.redraw();
-          const message = app.translator.trans('zerosonesfun-log.forum.cooldown_message', {
-            minutes: cooldownMinutes,
-          });
-          app.alerts.show({ type: 'error' }, message);
         }
         openLogComposerOrRedirect(tagSlug);
       });
