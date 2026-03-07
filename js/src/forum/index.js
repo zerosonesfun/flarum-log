@@ -3,22 +3,26 @@ import { extend } from 'flarum/common/extend';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import Button from 'flarum/common/components/Button';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
-import Stream from 'flarum/common/utils/Stream';
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
   extend(IndexPage.prototype, 'sidebarItems', function (items) {
     if (!app.session.user) return items;
 
     const count = Number(app.forum.attribute('drinkCount')) || 0;
+    const countFormatted = count.toLocaleString();
     const labelTemplate = app.forum.attribute('drinkButtonLabel') || '{count} Drinking';
-    const label = String(labelTemplate).replace(/\{count\}/g, count);
+    const label = String(labelTemplate).replace(/\{count\}/g, countFormatted);
+    // Place button right after "Start a Discussion": remove nav, add ours, re-add nav with lower priority
+    const navContent = items.has('nav') ? items.get('nav') : null;
+    if (items.has('nav')) items.remove('nav');
     items.add(
       'drinkLog',
       <Button className="Button DrinkLogButton" onclick={this.drinkLogAction.bind(this)}>
         {label}
       </Button>,
-      -10
+      0
     );
+    if (navContent !== null) items.add('nav', navContent, -10);
     return items;
   });
 
@@ -54,20 +58,11 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     const title = 'Log - ' + formatLogDate(new Date());
     app.composer.load(DiscussionComposer, {
       user: app.session.user,
-      initialTitle: title,
     });
     app.composer.show();
+    if (app.composer.fields && typeof app.composer.fields.title === 'function') {
+      app.composer.fields.title(title);
+    }
     m.redraw();
   }
-
-  extend(DiscussionComposer.prototype, 'oninit', function (vnode) {
-    const attrs = vnode.attrs;
-    if (attrs && attrs.initialTitle) {
-      if (this.composer.fields.title) {
-        this.composer.fields.title(attrs.initialTitle);
-      } else {
-        this.composer.fields.title = Stream(attrs.initialTitle);
-      }
-    }
-  });
 });

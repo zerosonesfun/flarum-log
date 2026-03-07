@@ -2,7 +2,7 @@ import app from 'flarum/admin/app';
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
   app.extensionData
-    .for('zerosonesfun-flarum-log')
+    .for('zerosonesfun/flarum-log')
     .registerSetting({
       setting: 'zerosonesfun-flarum-log.button_label',
       label: app.translator.trans('zerosonesfun-flarum-log.admin.button_label_label'),
