@@ -60,8 +60,19 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       user: app.session.user,
     });
     app.composer.show();
-    if (app.composer.fields && typeof app.composer.fields.title === 'function') {
-      app.composer.fields.title(title);
+    if (app.composer.fields) {
+      if (typeof app.composer.fields.title === 'function') {
+        app.composer.fields.title(title);
+      }
+      // Set Log tag from settings (like FoF Direct Links primary_tag)
+      const tagSlug = app.forum.attribute('drinkLogTagSlug');
+      if (tagSlug && app.store.has('tags')) {
+        const tag = app.store.getBy('tags', 'slug', tagSlug);
+        if (tag) {
+          const parent = tag.parent();
+          app.composer.fields.tags = parent ? [parent, tag] : [tag];
+        }
+      }
     }
     m.redraw();
   }

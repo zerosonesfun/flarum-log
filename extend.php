@@ -22,6 +22,9 @@ return [
         ->post('/flarum-log', 'zerosonesfun.flarum_log.click', Api\Controller\RecordDrinkClickController::class),
 
     (new Extend\Settings())
+        ->default('zerosonesfun-flarum-log.button_label', '{count} Drinking')
+        ->default('zerosonesfun-flarum-log.cooldown_minutes', '30')
+        ->default('zerosonesfun-flarum-log.log_tag_slug', 'log')
         ->serializeToForum('drinkButtonLabel', 'zerosonesfun-flarum-log.button_label', null, '{count} Drinking')
         ->serializeToForum('drinkCooldownMinutes', 'zerosonesfun-flarum-log.cooldown_minutes', null, '30')
         ->serializeToForum('drinkLogTagSlug', 'zerosonesfun-flarum-log.log_tag_slug', null, 'log'),
