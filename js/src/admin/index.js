@@ -40,6 +40,8 @@ function registerSettings(extensionId) {
 }
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
-  // Package zerosonesfun/flarum-log → id is zerosonesfun-log (flarum- prefix stripped)
-  registerSettings('zerosonesfun-log');
+  // Defer so extension locale is in the admin translator before we call trans() for labels.
+  setTimeout(() => {
+    registerSettings('zerosonesfun-log');
+  }, 0);
 });
