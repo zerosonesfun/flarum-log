@@ -5,6 +5,7 @@ namespace ZerosOnesFun\Drinks;
 use Flarum\Discussion\Event\Saving;
 use Flarum\Extend;
 use Flarum\Api\Serializer\ForumSerializer;
+use Flarum\Api\Serializer\UserSerializer;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 return [
@@ -39,6 +40,11 @@ return [
         ->attribute('drinkDirectLinksEnabled', function (ForumSerializer $serializer) {
             $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
             return $extensions->isEnabled('fof-direct-links');
+        }),
+
+    (new Extend\ApiSerializer(UserSerializer::class))
+        ->attribute('drinkLogTotal', function (UserSerializer $serializer, $user) {
+            return DrinkClick::totalCountForUser((int) $user->id);
         }),
 
     (new Extend\Locales(__DIR__ . '/locale')),

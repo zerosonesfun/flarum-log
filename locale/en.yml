@@ -1,6 +1,7 @@
 # Drink Log – English
-# Include both possible extension IDs so translations resolve regardless of how Flarum registers the catalog.
-# Use zerosonesfun-flarum-log in JS (composer package name with / → -). Some installs use zerosonesfun-log.
+# Root key must match the extension ID from Extension::nameToId() (vendor/core).
+# nameToId() does: explode('/', name) then str_replace(['flarum-ext-','flarum-'], '', package).
+# So zerosonesfun/flarum-log → package "log" → id zerosonesfun-log (not zerosonesfun-flarum-log).
 
 zerosonesfun-log:
   admin:
@@ -13,7 +14,9 @@ zerosonesfun-log:
   forum:
     drinking_button: '{count} Drinking'
     cooldown_message: You can only add to the live count every {minutes} minutes.
+    user_card_drinks: '{count} drinks'
 
+# Fallback in case any context uses composer-style id (no flarum- strip)
 zerosonesfun-flarum-log:
   admin:
     button_label_label: Button label
@@ -25,3 +28,4 @@ zerosonesfun-flarum-log:
   forum:
     drinking_button: '{count} Drinking'
     cooldown_message: You can only add to the live count every {minutes} minutes.
+    user_card_drinks: '{count} drinks'

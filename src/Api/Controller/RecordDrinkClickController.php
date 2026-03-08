@@ -4,6 +4,8 @@ namespace ZerosOnesFun\Drinks\Api\Controller;
 
 use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Illuminate\Database\Connection;
+use Illuminate\Database\DatabaseManager;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,7 +15,8 @@ use ZerosOnesFun\Drinks\DrinkClick;
 class RecordDrinkClickController implements RequestHandlerInterface
 {
     public function __construct(
-        protected SettingsRepositoryInterface $settings
+        protected SettingsRepositoryInterface $settings,
+        protected DatabaseManager $db
     ) {
     }
 
@@ -26,24 +29,42 @@ class RecordDrinkClickController implements RequestHandlerInterface
         $minutes = (int) $this->settings->get('zerosonesfun-flarum-log.cooldown_minutes', 30) ?: 30;
         $minutes = max(1, min(1440, $minutes)); // 1 min to 24 hours
 
-        $recorded = DrinkClick::recordClick($actor->id, $minutes);
-        $count = DrinkClick::currentCount($minutes);
+        $connection = $this->db->connection();
 
-        if (!$recorded) {
+        return $connection->transaction(function () use ($connection, $actor, $minutes) {
+            $this->acquireUserLock($connection, $actor->id);
+
+            $recorded = DrinkClick::recordClick($actor->id, $minutes);
+            $count = DrinkClick::currentCount($minutes);
+
+            if (!$recorded) {
+                return new JsonResponse([
+                    'data' => [
+                        'count' => $count,
+                        'recorded' => false,
+                        'message' => 'cooldown',
+                    ],
+                ], 429);
+            }
+
+            $userTotal = DrinkClick::totalCountForUser($actor->id);
+
             return new JsonResponse([
                 'data' => [
                     'count' => $count,
-                    'recorded' => false,
-                    'message' => 'cooldown',
+                    'recorded' => true,
+                    'userTotal' => $userTotal,
                 ],
-            ], 429);
-        }
+            ]);
+        });
+    }
 
-        return new JsonResponse([
-            'data' => [
-                'count' => $count,
-                'recorded' => true,
-            ],
-        ]);
+    /**
+     * Lock the row for this user in drink_click_locks so concurrent requests are serialized.
+     */
+    private function acquireUserLock(Connection $connection, int $userId): void
+    {
+        $connection->table('drink_click_locks')->insertOrIgnore([['user_id' => $userId]]);
+        $connection->table('drink_click_locks')->where('user_id', $userId)->lockForUpdate()->first();
     }
 }

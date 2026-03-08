@@ -55,6 +55,30 @@ class DrinkClick extends AbstractModel
     }
 
     /**
+     * Total number of drink clicks ever recorded for a user (never decreases).
+     * Uses a request-scoped cache so the same user serialized multiple times in one request only hits the DB once.
+     *
+     * @param int $userId
+     * @return int
+     */
+    public static function totalCountForUser(int $userId): int
+    {
+        static $cache = [];
+
+        if (array_key_exists($userId, $cache)) {
+            return $cache[$userId];
+        }
+
+        $count = (int) static::query()
+            ->where('user_id', $userId)
+            ->count();
+
+        $cache[$userId] = $count;
+
+        return $count;
+    }
+
+    /**
      * Record a drink click for the user. Returns true if recorded, false if on cooldown.
      *
      * @param int $minutes Cooldown length in minutes (default 30).

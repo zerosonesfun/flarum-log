@@ -31,8 +31,10 @@ class AttachLogTagToDiscussion
             return;
         }
 
-        $tagSlug = (string) $this->settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log');
-        $tagSlug = $tagSlug !== '' ? $tagSlug : 'log';
+        $tagSlug = trim((string) $this->settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+        if ($tagSlug === '') {
+            return;
+        }
 
         $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
         if (!$tag) {
