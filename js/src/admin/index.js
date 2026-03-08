@@ -2,32 +2,42 @@ import app from 'flarum/admin/app';
 
 export { default as extend } from './extend';
 
+// Use getters so label/help are translated when the settings component reads them (at render time),
+// not at init when the extension locale may not be in the admin translator yet.
+function makeSetting(setting, labelKey, helpKey, rest) {
+  return {
+    setting,
+    get label() {
+      return app.translator.trans(labelKey);
+    },
+    get help() {
+      return app.translator.trans(helpKey);
+    },
+    ...rest,
+  };
+}
+
 const settingConfigs = [
-  {
-    setting: 'zerosonesfun-flarum-log.button_label',
-    label: app.translator.trans('zerosonesfun-log.admin.button_label_label'),
-    help: app.translator.trans('zerosonesfun-log.admin.button_label_help'),
-    type: 'text',
-    placeholder: '{count} Drinking',
-  },
+  makeSetting(
+    'zerosonesfun-flarum-log.button_label',
+    'zerosonesfun-log.admin.button_label_label',
+    'zerosonesfun-log.admin.button_label_help',
+    { type: 'text', placeholder: '{count} Drinking' }
+  ),
   30,
-  {
-    setting: 'zerosonesfun-flarum-log.cooldown_minutes',
-    label: app.translator.trans('zerosonesfun-log.admin.cooldown_minutes_label'),
-    help: app.translator.trans('zerosonesfun-log.admin.cooldown_minutes_help'),
-    type: 'number',
-    min: 1,
-    max: 1440,
-    default: 30,
-  },
+  makeSetting(
+    'zerosonesfun-flarum-log.cooldown_minutes',
+    'zerosonesfun-log.admin.cooldown_minutes_label',
+    'zerosonesfun-log.admin.cooldown_minutes_help',
+    { type: 'number', min: 1, max: 1440, default: 30 }
+  ),
   20,
-  {
-    setting: 'zerosonesfun-flarum-log.log_tag_slug',
-    label: app.translator.trans('zerosonesfun-log.admin.log_tag_slug_label'),
-    help: app.translator.trans('zerosonesfun-log.admin.log_tag_slug_help'),
-    type: 'text',
-    placeholder: 'log',
-  },
+  makeSetting(
+    'zerosonesfun-flarum-log.log_tag_slug',
+    'zerosonesfun-log.admin.log_tag_slug_label',
+    'zerosonesfun-log.admin.log_tag_slug_help',
+    { type: 'text', placeholder: 'log' }
+  ),
   10,
 ];
 
@@ -40,8 +50,5 @@ function registerSettings(extensionId) {
 }
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
-  // Defer so extension locale is in the admin translator before we call trans() for labels.
-  setTimeout(() => {
-    registerSettings('zerosonesfun-log');
-  }, 0);
+  registerSettings('zerosonesfun-log');
 });
