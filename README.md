@@ -1,20 +1,21 @@
 # Drink Log (zerosonesfun/flarum-log)
 
-A [Flarum](https://flarum.org/) extension that adds a **Drinking** button under “Start a discussion” and opens a dated log discussion with an optional **Log** tag.
+A [Flarum](https://flarum.org/) extension that adds a **Drinking** button, tracks who’s drinking (live count + per-user totals), and opens a dated log discussion with an optional **Log** tag.
 
 - **Compatible:** Flarum 1.8.x  
-- **Install:** `composer require zerosonesfun/flarum-log:"*"`
+- **Install:** `composer require zerosonesfun/flarum-log:"*"`  
+- **Best experience:** Install [FoF Direct Links](https://github.com/FriendsOfFlarum/direct-links) so the composer opens with title, Log tag, and a simple body template already filled in.
 
 ## Features
 
-- **“X Drinking” button** (only when logged in) under the default “Start a discussion” button.  
-  `X` is the number of users who have clicked in the last 30 minutes.
-- **30‑minute cooldown:** Each user can click once per 30 minutes; the count goes down as older clicks expire.
+- **“X Drinking” button** (logged-in only): in the **sidebar** on desktop (under “Start a discussion”), and in the **drawer** under the search bar on mobile.  
+  `X` is the number of users who have clicked in the last 30 minutes (configurable 1–1440).
+- **Cooldown:** Each user can add to the live count once per cooldown window; the number goes down as older clicks expire.
 - **One click does two things:**
-  1. Records your “drinking” click (increments the counter, subject to cooldown).
-  2. Opens the **new discussion** composer with:
-     - **Title:** `Log - MM/DD/YYYY` (e.g. `Log - 03/07/2026`).
-     - **Log tag:** If the [Tags](https://github.com/flarum/tags) extension is enabled and a tag with slug `log` exists, new discussions created from this button are automatically given that tag.
+  1. Records your “drinking” click (live count + your **profile total**).
+  2. Opens the **new discussion** composer with title `Log - MM/DD/YYYY` and, when configured, the **Log** tag. With **FoF Direct Links**, the composer also opens with a small body template (Date, Time, Location, Amount, Variety).
+- **Profile total:** Each user’s public profile shows their total drinks (e.g. “1 drink” or “1.5k drinks”). This total only goes up: it increases when they use the button (after cooldown) or when they **manually** create a discussion and add the Log tag.
+- **Manual Log tag:** If someone starts a new discussion and adds the Log tag in the composer (without using the Drinking button), their profile total still increases by 1.
 
 ## Installation
 
@@ -23,32 +24,42 @@ composer require zerosonesfun/flarum-log:"*"
 php flarum migrate
 ```
 
-Then enable **Drink Log** in the Admin → Extensions panel.
+Enable **Drink Log** in Admin → Extensions.
 
-## Admin settings
+## Recommended: FoF Direct Links (best experience)
 
-In **Administration → Extensions → Drink Log**, you can configure:
+For the best experience, install [FriendsOfFlarum/direct-links](https://github.com/FriendsOfFlarum/direct-links):
 
-- **Button label** – Text shown on the button. Use `{count}` as a placeholder for the number (default: `{count} Drinking`).
-- **Cooldown (minutes)** – How many minutes must pass before a user can click again (1–1440; default: 30).
-- **Log tag slug** – When the Tags extension is enabled, this tag is attached to new “Log - date” discussions. Default: `log`. Change to use a different tag, or leave empty to disable auto-tagging.
+```bash
+composer require fof/direct-links
+```
 
-## Optional: Log tag (Tags extension)
+With Direct Links enabled and a **Log tag slug** set in Drink Log’s settings, clicking the Drinking button opens the composer via a direct link with:
+
+- **Title** pre-filled: `Log - DD/MM/YYYY`
+- **Primary tag** pre-selected: your configured Log tag
+- **Body** pre-filled with a short template: `Date`, `Time`, `Location`, `Amount`, `Variety`
+
+Without Direct Links, the composer still opens in-app with the title set, and the Log tag is attached when you post (for “Log - date” discussions).
+
+## Optional: Tags extension and Log tag
 
 If you use [flarum/tags](https://github.com/flarum/tags):
 
 1. Enable the **Tags** extension.
-2. Create a tag with the slug you set in **Log tag slug** (default **`log`**) in Administration → Tags. The extension does not create the tag for you (tags table layout can vary by site).
+2. In Administration → Tags, create a tag with the slug you set in Drink Log’s **Log tag slug** (default `log`). The extension does not create the tag for you.
 
-New “Log - date” discussions started from the Drinking button are tagged with the configured tag automatically. **This extension never deletes or modifies existing tags**—it only attaches the configured tag to new "Log - date" discussions when they are created.
+New “Log - date” discussions started from the Drinking button get that tag attached automatically. If a user manually adds the Log tag to any new discussion, their profile drink total also increases by 1. This extension never deletes or changes existing tags.
 
-### Composer opening with the Log tag pre-selected
+## Admin settings
 
-To have the composer open with the **Log tag already selected**, install [FoF Direct Links](https://github.com/FriendsOfFlarum/direct-links). When **Log tag slug** is set, Drink Log navigates to `/composer?title=...&primary_tag=your-slug`, which Direct Links uses to open the composer with title and tag pre-filled. Without Direct Links, the composer still opens in-app with the title set; the tag is applied when you post (backend attaches it to "Log - date" discussions).
+In **Administration → Extensions → Drink Log** you can set:
+
+- **Button label** – Text on the button. Use `{count}` for the number (e.g. `{count} Drinking`).
+- **Cooldown (minutes)** – Minutes before a user can add to the live count again (1–1440; default 30).
+- **Log tag slug** – Tag slug to attach to “Log - date” discussions and to use with Direct Links. Leave empty to disable auto-tagging and direct-link composer.
 
 ## Building the frontend (developers)
-
-To change the extension’s JavaScript and rebuild:
 
 ```bash
 cd js
@@ -56,12 +67,13 @@ npm install
 npm run build
 ```
 
-This updates `js/dist/forum.js` and `js/dist/admin.js`. Commit those files if you want to ship a pre-built bundle.
+This updates `js/dist/forum.js` and `js/dist/admin.js`. Commit those files if you ship a pre-built bundle.
 
 ## Security
 
 - Only logged-in users see and can use the Drinking button.
-- The “record drink” API requires authentication; cooldown is enforced per user in the backend.
+- The “record drink” API requires authentication; cooldown is enforced per user on the backend.
+- Profile totals are public; only the count is stored (no extra personal data).
 
 ## License
 
