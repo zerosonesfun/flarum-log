@@ -4,6 +4,7 @@ namespace ZerosOnesFun\Drinks\Api\Controller;
 
 use Flarum\Http\RequestUtil;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Flarum\User\User;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Laminas\Diactoros\Response\JsonResponse;
@@ -30,33 +31,42 @@ class RecordDrinkClickController implements RequestHandlerInterface
         $minutes = max(1, min(1440, $minutes)); // 1 min to 24 hours
 
         $connection = $this->db->connection();
+        $hasLockTable = $connection->getSchemaBuilder()->hasTable('drink_click_locks');
 
-        return $connection->transaction(function () use ($connection, $actor, $minutes) {
-            $this->acquireUserLock($connection, $actor->id);
+        if ($hasLockTable) {
+            return $connection->transaction(function () use ($connection, $actor, $minutes) {
+                $this->acquireUserLock($connection, $actor->id);
+                return $this->recordAndRespond($actor, $minutes);
+            });
+        }
 
-            $recorded = DrinkClick::recordClick($actor->id, $minutes);
-            $count = DrinkClick::currentCount($minutes);
+        return $this->recordAndRespond($actor, $minutes);
+    }
 
-            if (!$recorded) {
-                return new JsonResponse([
-                    'data' => [
-                        'count' => $count,
-                        'recorded' => false,
-                        'message' => 'cooldown',
-                    ],
-                ], 429);
-            }
+    private function recordAndRespond(User $actor, int $minutes): JsonResponse
+    {
+        $recorded = DrinkClick::recordClick($actor->id, $minutes);
+        $count = DrinkClick::currentCount($minutes);
 
-            $userTotal = DrinkClick::totalCountForUser($actor->id);
-
+        if (!$recorded) {
             return new JsonResponse([
                 'data' => [
                     'count' => $count,
-                    'recorded' => true,
-                    'userTotal' => $userTotal,
+                    'recorded' => false,
+                    'message' => 'cooldown',
                 ],
-            ]);
-        });
+            ], 429);
+        }
+
+        $userTotal = DrinkClick::totalCountForUser($actor->id);
+
+        return new JsonResponse([
+            'data' => [
+                'count' => $count,
+                'recorded' => true,
+                'userTotal' => $userTotal,
+            ],
+        ]);
     }
 
     /**
