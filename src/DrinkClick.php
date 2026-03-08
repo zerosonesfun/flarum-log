@@ -96,4 +96,19 @@ class DrinkClick extends AbstractModel
 
         return true;
     }
+
+    /**
+     * Record a drink for the user without cooldown (e.g. when they manually create a discussion with the Log tag).
+     * Still inserts one row so their profile total increases.
+     */
+    public static function recordClickWithoutCooldown(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+        $click = new static();
+        $click->user_id = $userId;
+        $click->clicked_at = Carbon::now();
+        $click->save();
+    }
 }

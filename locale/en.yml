@@ -14,6 +14,7 @@ zerosonesfun-log:
   forum:
     drinking_button: '{count} Drinking'
     cooldown_message: You can only add to the live count every {minutes} minutes.
+    user_card_drink: '1 drink'
     user_card_drinks: '{count} drinks'
 
 # Fallback in case any context uses composer-style id (no flarum- strip)
@@ -28,4 +29,5 @@ zerosonesfun-flarum-log:
   forum:
     drinking_button: '{count} Drinking'
     cooldown_message: You can only add to the live count every {minutes} minutes.
+    user_card_drink: '1 drink'
     user_card_drinks: '{count} drinks'

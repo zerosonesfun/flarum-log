@@ -90,11 +90,9 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     const user = this.attrs.user;
     const total = Number(user.attribute('drinkLogTotal')) || 0;
     const countLabel = abbreviateNumber(total);
-    items.add(
-      'drinkLogTotal',
-      app.translator.trans('zerosonesfun-log.forum.user_card_drinks', { count: countLabel }),
-      85
-    );
+    const key = total === 1 ? 'zerosonesfun-log.forum.user_card_drink' : 'zerosonesfun-log.forum.user_card_drinks';
+    const attrs = total === 1 ? {} : { count: countLabel };
+    items.add('drinkLogTotal', app.translator.trans(key, attrs), 85);
     return items;
   });
 
