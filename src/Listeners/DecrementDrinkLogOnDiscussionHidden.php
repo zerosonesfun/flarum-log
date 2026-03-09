@@ -5,7 +5,6 @@ namespace ZerosOnesFun\Drinks\Listeners;
 use Flarum\Discussion\Event\Hidden;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Illuminate\Database\DatabaseManager;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 /**
@@ -17,8 +16,7 @@ class DecrementDrinkLogOnDiscussionHidden
 {
     public function __construct(
         protected ExtensionManager $extensions,
-        protected SettingsRepositoryInterface $settings,
-        protected DatabaseManager $db
+        protected SettingsRepositoryInterface $settings
     ) {
     }
 
@@ -40,15 +38,8 @@ class DecrementDrinkLogOnDiscussionHidden
             return;
         }
 
-        // Use pivot table directly so we don't rely on $discussion->tags() (relationship may not be loaded)
-        $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
-        if (!$tag) {
-            return;
-        }
-        $hasLogTag = $this->db->table('discussion_tag')
-            ->where('discussion_id', $discussion->id)
-            ->where('tag_id', $tag->id)
-            ->exists();
+        // Use Discussion's tags() relationship (avoids hardcoding pivot table name, which may be prefixed)
+        $hasLogTag = $discussion->tags()->where('slug', $tagSlug)->exists();
         if (!$hasLogTag) {
             return;
         }

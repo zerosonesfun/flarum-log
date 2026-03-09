@@ -5,7 +5,6 @@ namespace ZerosOnesFun\Drinks\Listeners;
 use Flarum\Discussion\Event\Saving;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Illuminate\Database\DatabaseManager;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 /**
@@ -17,8 +16,7 @@ class DecrementDrinkLogOnDiscussionHideInSaving
 {
     public function __construct(
         protected ExtensionManager $extensions,
-        protected SettingsRepositoryInterface $settings,
-        protected DatabaseManager $db
+        protected SettingsRepositoryInterface $settings
     ) {
     }
 
@@ -30,12 +28,16 @@ class DecrementDrinkLogOnDiscussionHideInSaving
             return;
         }
 
-        // Detect: hidden_at is being set (was null, now not null)
-        // Check both model and request data (controller may set from $event->data)
+        // Detect: discussion is being hidden. Frontend sends PATCH with attributes.isHidden = true.
+        // Backend may set hidden_at on the model; also check request attributes (isHidden, hiddenAt, hidden_at).
         $wasHidden = $discussion->getOriginal('hidden_at');
-        $nowHidden = $discussion->hidden_at
-            ?? (isset($event->data['attributes']['hiddenAt']) ? $event->data['attributes']['hiddenAt'] : null);
-        if ($wasHidden !== null || $nowHidden === null) {
+        $attrs = $event->data['attributes'] ?? [];
+        $requestSaysHidden = ($attrs['isHidden'] === true || $attrs['isHidden'] === 'true'
+            || $attrs['is_hidden'] === true || $attrs['is_hidden'] === 'true')
+            || isset($attrs['hiddenAt']) && $attrs['hiddenAt'] !== null
+            || isset($attrs['hidden_at']) && $attrs['hidden_at'] !== null;
+        $modelSaysHidden = $discussion->hidden_at !== null;
+        if ($wasHidden !== null || (!$requestSaysHidden && !$modelSaysHidden)) {
             return;
         }
 
@@ -53,14 +55,8 @@ class DecrementDrinkLogOnDiscussionHideInSaving
             return;
         }
 
-        $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
-        if (!$tag) {
-            return;
-        }
-        $hasLogTag = $this->db->table('discussion_tag')
-            ->where('discussion_id', $discussion->id)
-            ->where('tag_id', $tag->id)
-            ->exists();
+        // Use Discussion's tags() relationship (avoids hardcoding pivot table name)
+        $hasLogTag = $discussion->tags()->where('slug', $tagSlug)->exists();
         if (!$hasLogTag) {
             return;
         }
