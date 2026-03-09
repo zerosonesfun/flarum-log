@@ -31,7 +31,8 @@ return [
 
     (new Extend\Routes('api'))
         ->get('/flarum-log/count', 'zerosonesfun.flarum_log.count', Api\Controller\ShowDrinkCountController::class)
-        ->post('/flarum-log', 'zerosonesfun.flarum_log.click', Api\Controller\RecordDrinkClickController::class),
+        ->post('/flarum-log', 'zerosonesfun.flarum_log.click', Api\Controller\RecordDrinkClickController::class)
+        ->post('/flarum-log/decrement-total', 'zerosonesfun.flarum_log.decrement_total', Api\Controller\DecrementDrinkTotalController::class),
 
     (new Extend\Settings())
         ->default('zerosonesfun-flarum-log.button_label', '{count} Drinking')
