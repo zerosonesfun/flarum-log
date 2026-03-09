@@ -79,7 +79,9 @@ return [
         ->fields(fn () => [
             \Tobyz\JsonApiServer\Schema\Number::make('drinkLogTotal')
                 ->get(function (User $user, Context $context) {
-                    return DrinkClick::totalCountForUser((int) $user->id);
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+                    return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
                 }),
             \Tobyz\JsonApiServer\Schema\Number::make('drinkLogDiscussionsCount')
                 ->get(function (User $user, Context $context) {

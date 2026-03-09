@@ -69,7 +69,9 @@ return [
 
     (new Extend\ApiSerializer(UserSerializer::class))
         ->attribute('drinkLogTotal', function (UserSerializer $serializer, $user) {
-            return DrinkClick::totalCountForUser((int) $user->id);
+            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+            $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+            return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
         })
         ->attribute('drinkLogDiscussionsCount', function (UserSerializer $serializer, $user) {
             $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
