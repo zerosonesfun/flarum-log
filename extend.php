@@ -10,10 +10,12 @@ use ZerosOnesFun\Drinks\DrinkClick;
 
 return [
     (new Extend\Event())
-        ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class),
+        ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
+        ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class),
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
-        ->css(__DIR__ . '/less/forum.less'),
+        ->css(__DIR__ . '/less/forum.less')
+        ->route('/u/{username}/drink-logs', 'zerosonesfun.drink-logs'),
     (new Extend\Frontend('admin'))
         ->js(__DIR__ . '/js/dist/admin.js')
         ->css(__DIR__ . '/less/admin.less'),
@@ -40,11 +42,30 @@ return [
         ->attribute('drinkDirectLinksEnabled', function (ForumSerializer $serializer) {
             $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
             return $extensions->isEnabled('fof-direct-links');
+        })
+        ->attribute('drinkLogTagId', function (ForumSerializer $serializer) {
+            $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
+            if (!$extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
+                return null;
+            }
+            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+            $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+            if ($tagSlug === '') {
+                return null;
+            }
+            $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
+
+            return $tag ? (int) $tag->id : null;
         }),
 
     (new Extend\ApiSerializer(UserSerializer::class))
         ->attribute('drinkLogTotal', function (UserSerializer $serializer, $user) {
             return DrinkClick::totalCountForUser((int) $user->id);
+        })
+        ->attribute('drinkLogDiscussionsCount', function (UserSerializer $serializer, $user) {
+            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+            $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+            return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
         }),
 
     (new Extend\Locales(__DIR__ . '/locale')),

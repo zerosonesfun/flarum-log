@@ -14,8 +14,7 @@ A [Flarum](https://flarum.org/) extension that adds a **Drinking** button, track
 - **One click does two things:**
   1. Records your “drinking” click (live count + your **profile total**).
   2. Opens the **new discussion** composer with title `Log - MM/DD/YYYY` and, when configured, the **Log** tag. With **FoF Direct Links**, the composer also opens with a small body template (Date, Time, Location, Amount, Variety).
-- **Profile total:** Each user’s public profile shows their total drinks (e.g. “1 drink” or “1.5k drinks”). It increases when they use the button (after cooldown) or when they **manually** create a discussion and add the Log tag, and **decreases by 1** when they delete one of their own discussions that has the Log tag.
-- **Profile “Drink Logs” tab:** On a user’s profile, a **Drink Logs** nav item appears under **Posts** (when Tags is enabled and a Log tag is configured). It shows the number of discussions they’ve created with the Log tag; clicking it loads a list of those discussions.
+- **Profile total:** Each user’s public profile shows their total drinks (e.g. “1 drink” or “1.5k drinks”). This total only goes up: it increases when they use the button (after cooldown) or when they **manually** create a discussion and add the Log tag.
 - **Manual Log tag:** If someone starts a new discussion and adds the Log tag in the composer (without using the Drinking button), their profile total still increases by 1.
 
 ## Installation

@@ -1,12 +1,15 @@
-import app from 'flarum/forum/app';
-import { extend } from 'flarum/common/extend';
-import IndexPage from 'flarum/forum/components/IndexPage';
-import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
-import UserCard from 'flarum/forum/components/UserCard';
-import UserPage from 'flarum/forum/components/UserPage';
-import Link from 'flarum/common/components/Link';
-import Button from 'flarum/common/components/Button';
-import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
+/**
+ * Flarum 2.0: ext: imports; IndexPage.sidebarItems → IndexSidebar.items.
+ */
+import app from 'ext:flarum/forum/app';
+import { extend } from 'ext:flarum/common/extend';
+import IndexSidebar from 'ext:flarum/forum/components/IndexSidebar';
+import HeaderSecondary from 'ext:flarum/forum/components/HeaderSecondary';
+import UserCard from 'ext:flarum/forum/components/UserCard';
+import UserPage from 'ext:flarum/forum/components/UserPage';
+import Link from 'ext:flarum/common/components/Link';
+import Button from 'ext:flarum/common/components/Button';
+import DiscussionComposer from 'ext:flarum/forum/components/DiscussionComposer';
 
 export { default as extend } from './extend';
 
@@ -31,7 +34,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return String(labelTemplate).replace(/\{count\}/g, countFormatted);
   }
 
-  function handleDrinkLogClick(indexPage) {
+  function handleDrinkLogClick(indexSidebar) {
     const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
     app
       .request(
@@ -48,18 +51,19 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
           app.session.user.pushAttributes({ drinkLogTotal: data.userTotal });
         }
         m.redraw();
-        openLogComposerOrRedirect(tagSlug, indexPage);
+        openLogComposerOrRedirect(tagSlug, indexSidebar);
       })
       .catch((err) => {
         if (err.status === 429 && err.response && err.response.data) {
           app.forum.pushAttributes({ drinkCount: err.response.data.count });
           m.redraw();
         }
-        openLogComposerOrRedirect(tagSlug, indexPage);
+        openLogComposerOrRedirect(tagSlug, indexSidebar);
       });
   }
 
-  extend(IndexPage.prototype, 'sidebarItems', function (items) {
+  // Flarum 2.0: IndexPage.prototype.sidebarItems → IndexSidebar.prototype.items
+  extend(IndexSidebar.prototype, 'items', function (items) {
     if (!app.session.user) return items;
 
     const label = getDrinkLogLabel();
@@ -119,12 +123,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return (m < 10 ? '0' : '') + m + '/' + (day < 10 ? '0' : '') + day + '/' + y;
   }
 
-  /**
-   * If FoF Direct Links is enabled and we have a tag slug, use URL so Direct Links
-   * opens the composer with title, tag, and body pre-filled. Otherwise open composer in-app
-   * using the same flow as "Start a Discussion" so mobile minimize/discard (double-X) works.
-   */
-  function openLogComposerOrRedirect(tagSlug, indexPage) {
+  function openLogComposerOrRedirect(tagSlug, indexSidebar) {
     const title = 'Log - ' + formatLogDate(new Date());
     const directLinksEnabled = !!app.forum.attribute('drinkDirectLinksEnabled');
     if (directLinksEnabled && tagSlug) {
@@ -138,17 +137,14 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       window.location.href = baseUrl + '/composer?' + q;
       return;
     }
-    openLogComposer(title, indexPage);
+    openLogComposer(title, indexSidebar);
   }
 
-  /**
-   * Open composer the same way as "Start a Discussion" (newDiscussionAction) so that
-   * on mobile the first X minimizes and the second X properly discards the draft.
-   * Then set the title after the composer is shown.
-   */
-  function openLogComposer(title, indexPage) {
-    if (indexPage && typeof indexPage.newDiscussionAction === 'function') {
-      indexPage
+  function openLogComposer(title, indexSidebar) {
+    // 2.0: newDiscussionAction may be on IndexSidebar or still on a page context
+    const page = indexSidebar?.attrs?.state?.getPage?.() ?? null;
+    if (page && typeof page.newDiscussionAction === 'function') {
+      page
         .newDiscussionAction()
         .then(() => {
           if (app.composer.fields && typeof app.composer.fields.title === 'function') {
@@ -159,7 +155,6 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
         .catch(() => {});
       return;
     }
-    // Fallback if IndexPage context not available
     app.composer.load(DiscussionComposer, {
       user: app.session.user,
     });
