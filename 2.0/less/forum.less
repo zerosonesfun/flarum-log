@@ -19,13 +19,37 @@
   margin-right: 4px;
 }
 
-.DrinkLogNav-label,
-.DrinkLogNav-count {
-  font-size: 12px;
+.DrinkLogNav-label {
+  font-size: 13px;
   margin-left: 10px;
 }
 
-.DrinkLogNav-link--active .DrinkLogNav-label,
-.DrinkLogNav-link--active .DrinkLogNav-count {
+.DrinkLogNav-count {
+  font-size: 12px;
+  margin-left: 10px;
   font-weight: bold;
+}
+
+.DrinkLogNav-link--active .DrinkLogNav-label {
+  font-weight: bold;
+}
+
+/* Drink Logs nav item positioning: large screens */
+@media (min-width: 769px) {
+  .item-drinkLogs {
+    position: relative;
+    left: -28px;
+  }
+}
+
+/* Drink Logs nav item: mobile */
+@media (max-width: 768px) {
+  .item-drinkLogs {
+    position: absolute;
+    left: 28px !important;
+  }
+
+  .item-drinkLogs .DrinkLogNav-label {
+    font-size: 16px;
+  }
 }

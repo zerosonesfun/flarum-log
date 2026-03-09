@@ -7,24 +7,26 @@ import DiscussionListState from 'flarum/forum/states/DiscussionListState';
  * List state that filters discussions by author and log tag.
  */
 class DrinkLogsListState extends DiscussionListState {
-  constructor(user, tagId) {
+  constructor(user, tagId, tagSlug) {
     super();
     this.drinkLogUser = user;
     this.drinkLogTagId = tagId;
+    this.drinkLogTagSlug = tagSlug || '';
   }
 
   getParams() {
     const params = super.getParams();
-    if (!this.drinkLogUser || this.drinkLogTagId == null) {
+    if (!this.drinkLogUser || (this.drinkLogTagId == null && !this.drinkLogTagSlug)) {
       return params;
     }
-    // Flarum's discussion list API expects author by slug and tag by id (or slug depending on extension)
+    // Flarum: author = user id; tag = slug (flarum/tags typically expects slug) or id
+    const tagFilter = this.drinkLogTagSlug || this.drinkLogTagId;
     return {
       ...params,
       filter: {
         ...(params.filter || {}),
-        author: this.drinkLogUser.slug(),
-        tag: this.drinkLogTagId,
+        author: this.drinkLogUser.id(),
+        tag: tagFilter,
       },
     };
   }
@@ -45,8 +47,9 @@ export default class DrinkLogsUserPage extends UserPage {
 
   initDrinkLogsState() {
     const tagId = app.forum.attribute('drinkLogTagId');
-    if (tagId != null && this.user) {
-      this.drinkLogsState = new DrinkLogsListState(this.user, tagId);
+    const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
+    if ((tagId != null || tagSlug) && this.user) {
+      this.drinkLogsState = new DrinkLogsListState(this.user, tagId, tagSlug);
       this.drinkLogsState.loadPage(1);
     }
   }
@@ -56,7 +59,8 @@ export default class DrinkLogsUserPage extends UserPage {
       return null;
     }
     const tagId = app.forum.attribute('drinkLogTagId');
-    if (tagId == null) {
+    const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
+    if (tagId == null && !tagSlug) {
       return (
         <div className="DrinkLogsUserPage-empty">
           {app.translator.trans('zerosonesfun-log.forum.drink_logs_requires_tags')}
