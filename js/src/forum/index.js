@@ -1,6 +1,5 @@
 import app from 'flarum/forum/app';
 import { extend as flarumExtend } from 'flarum/common/extend';
-import Routes from 'flarum/common/extend/Routes';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
 import UserCard from 'flarum/forum/components/UserCard';
@@ -10,11 +9,14 @@ import Button from 'flarum/common/components/Button';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
 import DrinkLogsUserPage from './components/DrinkLogsUserPage';
 
-export const extend = [
-  new Routes().add('zerosonesfun.drink-logs', '/u/:username/drink-logs', DrinkLogsUserPage),
-];
+export const extend = [];
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
+  // Register route at runtime (same pattern as custom-profile-page) so the component is a proper constructor.
+  app.routes['zerosonesfun.drink-logs'] = {
+    path: '/u/:username/drink-logs',
+    component: DrinkLogsUserPage,
+  };
   function abbreviateNumber(n) {
     const num = Number(n) || 0;
     if (num >= 1e6) {
@@ -110,7 +112,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     const count = Number(user.attribute('drinkLogDiscussionsCount')) || 0;
     const tagId = app.forum.attribute('drinkLogTagId');
     if (tagId == null) return items;
-    const href = app.route('zerosonesfun.drink-logs', { username: user.username() });
+    const href = app.route('zerosonesfun.drink-logs', { username: user.slug() });
     const label = app.translator.trans('zerosonesfun-log.forum.drink_logs_nav', { count });
     items.add('drinkLogs', <Link href={href}>{label}</Link>, 75);
     return items;

@@ -2,7 +2,7 @@
  * Flarum 2.0: ext: imports; IndexPage.sidebarItems → IndexSidebar.items.
  */
 import app from 'ext:flarum/forum/app';
-import { extend } from 'ext:flarum/common/extend';
+import { extend as flarumExtend } from 'ext:flarum/common/extend';
 import IndexSidebar from 'ext:flarum/forum/components/IndexSidebar';
 import HeaderSecondary from 'ext:flarum/forum/components/HeaderSecondary';
 import UserCard from 'ext:flarum/forum/components/UserCard';
@@ -10,10 +10,16 @@ import UserPage from 'ext:flarum/forum/components/UserPage';
 import Link from 'ext:flarum/common/components/Link';
 import Button from 'ext:flarum/common/components/Button';
 import DiscussionComposer from 'ext:flarum/forum/components/DiscussionComposer';
+import DrinkLogsUserPage from './components/DrinkLogsUserPage';
 
-export { default as extend } from './extend';
+export const extend = [];
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
+  // Register route at runtime (same pattern as custom-profile-page) so the component is a proper constructor.
+  app.routes['zerosonesfun.drink-logs'] = {
+    path: '/u/:username/drink-logs',
+    component: DrinkLogsUserPage,
+  };
   function abbreviateNumber(n) {
     const num = Number(n) || 0;
     if (num >= 1e6) {
@@ -63,7 +69,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   }
 
   // Flarum 2.0: IndexPage.prototype.sidebarItems → IndexSidebar.prototype.items
-  extend(IndexSidebar.prototype, 'items', function (items) {
+  flarumExtend(IndexSidebar.prototype, 'items', function (items) {
     if (!app.session.user) return items;
 
     const label = getDrinkLogLabel();
@@ -80,7 +86,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  extend(HeaderSecondary.prototype, 'items', function (items) {
+  flarumExtend(HeaderSecondary.prototype, 'items', function (items) {
     if (!app.session.user) return items;
 
     const label = getDrinkLogLabel();
@@ -94,7 +100,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  extend(UserCard.prototype, 'infoItems', function (items) {
+  flarumExtend(UserCard.prototype, 'infoItems', function (items) {
     const user = this.attrs.user;
     const total = Number(user.attribute('drinkLogTotal')) || 0;
     const countLabel = abbreviateNumber(total);
@@ -104,13 +110,13 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  extend(UserPage.prototype, 'navItems', function (items) {
+  flarumExtend(UserPage.prototype, 'navItems', function (items) {
     const user = this.user;
     if (!user) return items;
     const count = Number(user.attribute('drinkLogDiscussionsCount')) || 0;
     const tagId = app.forum.attribute('drinkLogTagId');
     if (tagId == null) return items;
-    const href = app.route('zerosonesfun.drink-logs', { username: user.username() });
+    const href = app.route('zerosonesfun.drink-logs', { username: user.slug() });
     const label = app.translator.trans('zerosonesfun-log.forum.drink_logs_nav', { count });
     items.add('drinkLogs', <Link href={href}>{label}</Link>, 75);
     return items;
