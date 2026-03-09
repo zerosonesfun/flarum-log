@@ -132,49 +132,6 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  // When viewing our own profile: if .DrinkLogNav-count ever decreases (user hid a log discussion),
-  // call the API to decrement total drinks in DB and update the displayed total.
-  (function () {
-    let lastNavCount = null;
-    let currentObserver = null;
-
-    function attachObserverIfOwnProfile() {
-      if (!app.session.user) return;
-      const countEl = document.querySelector('.DrinkLogNav-count');
-      if (!countEl) return;
-      if (currentObserver) {
-        currentObserver.disconnect();
-        currentObserver = null;
-      }
-      lastNavCount = parseInt(countEl.textContent, 10) || 0;
-      currentObserver = new MutationObserver(function () {
-        const newCount = parseInt(countEl.textContent, 10) || 0;
-        if (newCount < lastNavCount && lastNavCount !== null) {
-          app
-            .request({
-              method: 'POST',
-              url: app.forum.attribute('apiUrl') + '/flarum-log/decrement-total',
-            })
-            .then((res) => {
-              if (res.data && res.data.newTotal !== undefined && app.session.user) {
-                app.session.user.pushAttributes({ drinkLogTotal: res.data.newTotal });
-                m.redraw();
-              }
-            })
-            .catch(() => {});
-        }
-        lastNavCount = newCount;
-      });
-      currentObserver.observe(countEl, { characterData: true, childList: true, subtree: true });
-    }
-
-    flarumExtend(UserPage.prototype, 'oncreate', function () {
-      if (this.user && app.session.user && this.user.id() === app.session.user.id()) {
-        setTimeout(attachObserverIfOwnProfile, 400);
-      }
-    });
-  })();
-
   function formatLogDate(d) {
     const m = d.getMonth() + 1;
     const day = d.getDate();

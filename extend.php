@@ -12,7 +12,8 @@ $eventExtender = (new Extend\Event())
     ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
     ->listen(Saving::class, Listeners\DecrementDrinkLogOnDiscussionHideInSaving::class)
     ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
-    ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class);
+    ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class)
+    ->listen(\Flarum\Post\Event\Deleted::class, Listeners\DecrementDrinkLogOnPostDeleted::class);
 if (class_exists(\Flarum\Discussion\Event\Hiding::class)) {
     $eventExtender->listen(\Flarum\Discussion\Event\Hiding::class, Listeners\DecrementDrinkLogOnDiscussionHiding::class);
 }
