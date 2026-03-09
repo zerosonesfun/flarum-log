@@ -4,75 +4,50 @@ import DiscussionList from 'flarum/forum/components/DiscussionList';
 import DiscussionListState from 'flarum/forum/states/DiscussionListState';
 
 /**
- * List state that filters discussions by author and log tag.
+ * Shows discussions by this user that have the configured Log tag.
+ * Mirrors core DiscussionsUserPage: pass filter + sort into DiscussionListState and call refresh().
  */
-class DrinkLogsListState extends DiscussionListState {
-  constructor(user, tagId, tagSlug) {
-    super();
-    this.drinkLogUser = user;
-    this.drinkLogTagId = tagId;
-    this.drinkLogTagSlug = tagSlug || '';
-  }
-
-  getParams() {
-    const params = super.getParams();
-    if (!this.drinkLogUser || (this.drinkLogTagId == null && !this.drinkLogTagSlug)) {
-      return params;
-    }
-    // Flarum: author = user id; tag = slug (flarum/tags typically expects slug) or id
-    const tagFilter = this.drinkLogTagSlug || this.drinkLogTagId;
-    return {
-      ...params,
-      filter: {
-        ...(params.filter || {}),
-        author: this.drinkLogUser.id(),
-        tag: tagFilter,
-      },
-    };
-  }
-}
-
 export default class DrinkLogsUserPage extends UserPage {
   oninit(vnode) {
     super.oninit(vnode);
-    this.drinkLogsState = null;
-    // Load user from route so this.user is set (required for UserPage; custom route doesn't do this automatically)
     this.loadUser(m.route.param('username'));
   }
 
   show(user) {
     super.show(user);
-    this.initDrinkLogsState();
-  }
 
-  initDrinkLogsState() {
-    const tagId = app.forum.attribute('drinkLogTagId');
     const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
-    if ((tagId != null || tagSlug) && this.user) {
-      this.drinkLogsState = new DrinkLogsListState(this.user, tagId, tagSlug);
-      this.drinkLogsState.loadPage(1);
+    const tagId = app.forum.attribute('drinkLogTagId');
+    const tagParam = tagSlug || tagId;
+    if (tagParam == null || tagParam === '') {
+      this.state = null;
+      return;
     }
+
+    // Same pattern as core DiscussionsUserPage: filter uses author: user.username()
+    this.state = new DiscussionListState({
+      filter: { author: user.username(), tag: tagParam },
+      sort: 'newest',
+    });
+    this.state.refresh();
   }
 
   content() {
     if (!this.user) {
       return null;
     }
-    const tagId = app.forum.attribute('drinkLogTagId');
     const tagSlug = (app.forum.attribute('drinkLogTagSlug') || '').trim();
-    if (tagId == null && !tagSlug) {
+    const tagId = app.forum.attribute('drinkLogTagId');
+    if ((tagId == null && !tagSlug) || !this.state) {
       return (
         <div className="DrinkLogsUserPage-empty">
           {app.translator.trans('zerosonesfun-log.forum.drink_logs_requires_tags')}
         </div>
       );
     }
-    if (!this.drinkLogsState) {
-      return null;
-    }
     return (
       <div className="DrinkLogsUserPage">
-        <DiscussionList state={this.drinkLogsState} />
+        <DiscussionList state={this.state} />
       </div>
     );
   }
