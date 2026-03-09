@@ -53,6 +53,6 @@ class DecrementDrinkLogOnDiscussionHidden
             return;
         }
 
-        DrinkClick::decrementCountForUser($authorId);
+        DrinkClick::decrementCountForUserIfLogDiscussion((int) $discussion->id, $authorId);
     }
 }

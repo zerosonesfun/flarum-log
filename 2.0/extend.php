@@ -11,6 +11,7 @@ use ZerosOnesFun\Drinks\DrinkClick;
 return [
     (new Extend\Event())
         ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
+        ->listen(Saving::class, Listeners\DecrementDrinkLogOnDiscussionHideInSaving::class)
         ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
         ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class),
 

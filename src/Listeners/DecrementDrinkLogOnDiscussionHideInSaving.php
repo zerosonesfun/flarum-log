@@ -2,18 +2,18 @@
 
 namespace ZerosOnesFun\Drinks\Listeners;
 
-use Flarum\Discussion\Event\Hidden;
+use Flarum\Discussion\Event\Saving;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Database\DatabaseManager;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 /**
- * When a user "deletes" their discussion from the UI, Flarum hides it (soft delete)
- * and dispatches Hidden, not Deleting. This listener decrements their drink total
- * when they hide a discussion that has the Log tag.
+ * When a discussion is soft-deleted via the UI, Flarum often PATCHes it with hiddenAt set,
+ * which triggers Saving (not necessarily Hidden). This listener detects that transition
+ * and decrements the author's drink total for log-tagged discussions.
  */
-class DecrementDrinkLogOnDiscussionHidden
+class DecrementDrinkLogOnDiscussionHideInSaving
 {
     public function __construct(
         protected ExtensionManager $extensions,
@@ -22,9 +22,22 @@ class DecrementDrinkLogOnDiscussionHidden
     ) {
     }
 
-    public function handle(Hidden $event): void
+    public function handle(Saving $event): void
     {
         $discussion = $event->discussion;
+
+        if (!$discussion->exists) {
+            return;
+        }
+
+        // Detect: hidden_at is being set (was null, now not null)
+        // Check both model and request data (controller may set from $event->data)
+        $wasHidden = $discussion->getOriginal('hidden_at');
+        $nowHidden = $discussion->hidden_at
+            ?? (isset($event->data['attributes']['hiddenAt']) ? $event->data['attributes']['hiddenAt'] : null);
+        if ($wasHidden !== null || $nowHidden === null) {
+            return;
+        }
 
         if (!$this->extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
             return;
@@ -40,7 +53,6 @@ class DecrementDrinkLogOnDiscussionHidden
             return;
         }
 
-        // Use pivot table directly so we don't rely on $discussion->tags() (relationship may not be loaded)
         $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
         if (!$tag) {
             return;

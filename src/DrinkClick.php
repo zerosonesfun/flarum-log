@@ -15,6 +15,9 @@ class DrinkClick extends AbstractModel
     /** @var array<int, int> Request-scoped cache for totalCountForUser (invalidated by decrementCountForUser). */
     protected static $totalCountCache = [];
 
+    /** @var array<int, true> Request-scoped: discussion IDs we already decremented for (avoid double-decrement). */
+    protected static $decrementedDiscussionIds = [];
+
     public const DEFAULT_COOLDOWN_MINUTES = 30;
 
     protected $casts = [
@@ -130,6 +133,23 @@ class DrinkClick extends AbstractModel
             $click->delete();
             unset(self::$totalCountCache[$userId]);
         }
+    }
+
+    /**
+     * Decrement the author's drink total when a log-tagged discussion is hidden/deleted.
+     * Uses request-scoped tracking so we only decrement once per discussion per request
+     * (e.g. if both Saving and Hidden fire).
+     */
+    public static function decrementCountForUserIfLogDiscussion(int $discussionId, int $authorId): void
+    {
+        if ($discussionId <= 0 || $authorId <= 0) {
+            return;
+        }
+        if (isset(self::$decrementedDiscussionIds[$discussionId])) {
+            return;
+        }
+        self::$decrementedDiscussionIds[$discussionId] = true;
+        self::decrementCountForUser($authorId);
     }
 
     /**
