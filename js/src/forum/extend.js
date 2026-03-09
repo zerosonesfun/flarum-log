@@ -1,4 +1,2 @@
-import Routes from 'flarum/common/extend/Routes';
-import DrinkLogsUserPage from './components/DrinkLogsUserPage';
-
-export default [new Routes().add('zerosonesfun.drink-logs', '/u/:username/drink-logs', <DrinkLogsUserPage />)];
+// Route is registered in index.js so DrinkLogsUserPage class is in the same scope (avoids "not a constructor" in bundle).
+export default [];

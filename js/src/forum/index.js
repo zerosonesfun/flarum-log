@@ -1,5 +1,6 @@
 import app from 'flarum/forum/app';
-import { extend } from 'flarum/common/extend';
+import { extend as flarumExtend } from 'flarum/common/extend';
+import Routes from 'flarum/common/extend/Routes';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
 import UserCard from 'flarum/forum/components/UserCard';
@@ -7,8 +8,11 @@ import UserPage from 'flarum/forum/components/UserPage';
 import Link from 'flarum/common/components/Link';
 import Button from 'flarum/common/components/Button';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
+import DrinkLogsUserPage from './components/DrinkLogsUserPage';
 
-export { default as extend } from './extend';
+export const extend = [
+  new Routes().add('zerosonesfun.drink-logs', '/u/:username/drink-logs', DrinkLogsUserPage),
+];
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
   function abbreviateNumber(n) {
@@ -59,7 +63,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       });
   }
 
-  extend(IndexPage.prototype, 'sidebarItems', function (items) {
+  flarumExtend(IndexPage.prototype, 'sidebarItems', function (items) {
     if (!app.session.user) return items;
 
     const label = getDrinkLogLabel();
@@ -76,7 +80,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  extend(HeaderSecondary.prototype, 'items', function (items) {
+  flarumExtend(HeaderSecondary.prototype, 'items', function (items) {
     if (!app.session.user) return items;
 
     const label = getDrinkLogLabel();
@@ -90,7 +94,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  extend(UserCard.prototype, 'infoItems', function (items) {
+  flarumExtend(UserCard.prototype, 'infoItems', function (items) {
     const user = this.attrs.user;
     const total = Number(user.attribute('drinkLogTotal')) || 0;
     const countLabel = abbreviateNumber(total);
@@ -100,7 +104,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  extend(UserPage.prototype, 'navItems', function (items) {
+  flarumExtend(UserPage.prototype, 'navItems', function (items) {
     const user = this.user;
     if (!user) return items;
     const count = Number(user.attribute('drinkLogDiscussionsCount')) || 0;
