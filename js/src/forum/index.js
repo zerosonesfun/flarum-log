@@ -1,5 +1,6 @@
 import app from 'flarum/forum/app';
-import { extend as flarumExtend } from 'flarum/common/extend';
+import { extend as flarumExtend, override } from 'flarum/common/extend';
+import Discussion from 'flarum/common/models/Discussion';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
 import UserCard from 'flarum/forum/components/UserCard';
@@ -130,6 +131,65 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       75
     );
     return items;
+  });
+
+  function discussionHadLogTag(discussion) {
+    const tagId = app.forum.attribute('drinkLogTagId');
+    if (tagId == null) return false;
+    const tags = discussion.tags && discussion.tags();
+    if (Array.isArray(tags)) return tags.some((t) => t && String(t.id()) === String(tagId));
+    const rel = discussion.data.relationships && discussion.data.relationships.tags;
+    const data = rel && rel.data;
+    if (Array.isArray(data)) return data.some((r) => r && String(r.id) === String(tagId));
+    return false;
+  }
+
+  function isCurrentUserAuthor(discussion) {
+    return app.session.user && discussion.user() && discussion.user().id() === app.session.user.id();
+  }
+
+  function decrementDrinkTotalFromFrontend() {
+    app
+      .request({ method: 'POST', url: app.forum.attribute('apiUrl') + '/flarum-log/decrement-total' })
+      .then((res) => {
+        if (res.data && res.data.newTotal !== undefined && app.session.user) {
+          app.session.user.pushAttributes({ drinkLogTotal: res.data.newTotal });
+          m.redraw();
+        }
+      })
+      .catch(() => {});
+  }
+
+  // When discussion.delete() succeeds, if this discussion had the log tag and current user is author, decrement total drinks.
+  override(Discussion.prototype, 'delete', function (original, body, options) {
+    const discussion = this;
+    const hadLogTag = discussionHadLogTag(discussion);
+    const isAuthor = isCurrentUserAuthor(discussion);
+    return original.call(this, body, options).then(
+      function () {
+        if (hadLogTag && isAuthor) decrementDrinkTotalFromFrontend();
+      },
+      function (err) {
+        throw err;
+      }
+    );
+  });
+
+  // When discussion.save() is used to hide (isHidden: true), same decrement after save succeeds.
+  override(Discussion.prototype, 'save', function (original, attributes, options) {
+    const discussion = this;
+    const isHiding = attributes && (attributes.isHidden === true || attributes.isHidden === 'true');
+    const hadLogTag = isHiding && discussionHadLogTag(discussion);
+    const isAuthor = isHiding && isCurrentUserAuthor(discussion);
+    return original.call(this, attributes, options).then(
+      function (saved) {
+        if (hadLogTag && isAuthor) decrementDrinkTotalFromFrontend();
+        return saved;
+      },
+      function (err) {
+        throw err;
+      }
+    );
   });
 
   function formatLogDate(d) {
