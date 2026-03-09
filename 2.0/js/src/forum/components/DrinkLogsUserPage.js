@@ -25,7 +25,7 @@ class DrinkLogsListState extends DiscussionListState {
       ...params,
       filter: {
         ...(params.filter || {}),
-        author: this.drinkLogUser.id(),
+        author: this.drinkLogUser.slug(),
         tag: this.drinkLogTagId,
       },
     };
@@ -36,20 +36,12 @@ export default class DrinkLogsUserPage extends UserPage {
   oninit(vnode) {
     super.oninit(vnode);
     this.drinkLogsState = null;
+    this.loadUser(m.route.param('username'));
   }
 
-  oncreate(vnode) {
-    super.oncreate(vnode);
-    if (this.user) {
-      this.initDrinkLogsState();
-    }
-  }
-
-  onupdate(vnode) {
-    super.onupdate(vnode);
-    if (this.user && !this.drinkLogsState) {
-      this.initDrinkLogsState();
-    }
+  show(user) {
+    super.show(user);
+    this.initDrinkLogsState();
   }
 
   initDrinkLogsState() {

@@ -17,6 +17,7 @@ zerosonesfun-log:
     user_card_drink: '1 drink'
     user_card_drinks: '{count} drinks'
     drink_logs_nav: 'Drink Logs ({count})'
+    drink_logs_nav_label: Drink Logs
     drink_logs_requires_tags: Drink Logs require the Tags extension and a configured Log tag.
 
 # Fallback in case any context uses composer-style id (no flarum- strip)
@@ -34,4 +35,5 @@ zerosonesfun-flarum-log:
     user_card_drink: '1 drink'
     user_card_drinks: '{count} drinks'
     drink_logs_nav: 'Drink Logs ({count})'
+    drink_logs_nav_label: Drink Logs
     drink_logs_requires_tags: Drink Logs require the Tags extension and a configured Log tag.

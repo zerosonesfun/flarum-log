@@ -113,8 +113,22 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     const tagId = app.forum.attribute('drinkLogTagId');
     if (tagId == null) return items;
     const href = app.route('zerosonesfun.drink-logs', { username: user.slug() });
-    const label = app.translator.trans('zerosonesfun-log.forum.drink_logs_nav', { count });
-    items.add('drinkLogs', <Link href={href}>{label}</Link>, 75);
+    const path = typeof m.route.get === 'function' ? (m.route.get() || '') : '';
+    const isActive = (app.current.get && app.current.get('routeName') === 'zerosonesfun.drink-logs') || path.indexOf('/drink-logs') !== -1;
+    items.add(
+      'drinkLogs',
+      <Link
+        href={href}
+        className={'DrinkLogNav-link' + (isActive ? ' DrinkLogNav-link--active' : '')}
+      >
+        <i className="fas fa-glass-whiskey DrinkLogNav-icon" />
+        <span className="DrinkLogNav-label">
+          {app.translator.trans('zerosonesfun-log.forum.drink_logs_nav_label')}
+        </span>
+        <span className="DrinkLogNav-count">{count}</span>
+      </Link>,
+      75
+    );
     return items;
   });
 

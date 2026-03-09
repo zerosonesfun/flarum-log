@@ -18,11 +18,12 @@ class DrinkLogsListState extends DiscussionListState {
     if (!this.drinkLogUser || this.drinkLogTagId == null) {
       return params;
     }
+    // Flarum's discussion list API expects author by slug and tag by id (or slug depending on extension)
     return {
       ...params,
       filter: {
         ...(params.filter || {}),
-        author: this.drinkLogUser.id(),
+        author: this.drinkLogUser.slug(),
         tag: this.drinkLogTagId,
       },
     };
@@ -33,20 +34,13 @@ export default class DrinkLogsUserPage extends UserPage {
   oninit(vnode) {
     super.oninit(vnode);
     this.drinkLogsState = null;
+    // Load user from route so this.user is set (required for UserPage; custom route doesn't do this automatically)
+    this.loadUser(m.route.param('username'));
   }
 
-  oncreate(vnode) {
-    super.oncreate(vnode);
-    if (this.user) {
-      this.initDrinkLogsState();
-    }
-  }
-
-  onupdate(vnode) {
-    super.onupdate(vnode);
-    if (this.user && !this.drinkLogsState) {
-      this.initDrinkLogsState();
-    }
+  show(user) {
+    super.show(user);
+    this.initDrinkLogsState();
   }
 
   initDrinkLogsState() {
