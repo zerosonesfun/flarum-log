@@ -38,8 +38,11 @@ class DecrementDrinkLogOnDiscussionDelete
             return;
         }
 
-        // Use Discussion's tags() relationship (avoids hardcoding pivot table name)
-        $hasLogTag = $discussion->tags()->where('slug', $tagSlug)->exists();
+        // Check from Tag side: tag with this slug has this discussion
+        $hasLogTag = \Flarum\Tags\Tag::query()
+            ->where('slug', $tagSlug)
+            ->whereHas('discussions', fn ($q) => $q->where('discussions.id', $discussion->id))
+            ->exists();
         if (!$hasLogTag) {
             return;
         }

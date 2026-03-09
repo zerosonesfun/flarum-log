@@ -9,11 +9,17 @@ use Tobyz\JsonApiServer\Context;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 return [
-    (new Extend\Event())
-        ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
-        ->listen(Saving::class, Listeners\DecrementDrinkLogOnDiscussionHideInSaving::class)
-        ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
-        ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class),
+    (function () {
+        $e = (new Extend\Event())
+            ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
+            ->listen(Saving::class, Listeners\DecrementDrinkLogOnDiscussionHideInSaving::class)
+            ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
+            ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class);
+        if (class_exists(\Flarum\Discussion\Event\Hiding::class)) {
+            $e->listen(\Flarum\Discussion\Event\Hiding::class, Listeners\DecrementDrinkLogOnDiscussionHiding::class);
+        }
+        return $e;
+    })(),
 
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')

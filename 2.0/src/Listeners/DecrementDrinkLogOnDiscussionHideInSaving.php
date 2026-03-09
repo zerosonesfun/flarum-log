@@ -28,10 +28,9 @@ class DecrementDrinkLogOnDiscussionHideInSaving
             return;
         }
 
-        // Detect: discussion is being hidden. Frontend sends PATCH with attributes.isHidden = true.
-        // Backend may set hidden_at on the model; also check request attributes (isHidden, hiddenAt, hidden_at).
+        // Detect: discussion is being hidden. data may be at attributes or data.attributes (JSON:API).
         $wasHidden = $discussion->getOriginal('hidden_at');
-        $attrs = $event->data['attributes'] ?? [];
+        $attrs = $event->data['attributes'] ?? $event->data['data']['attributes'] ?? [];
         $requestSaysHidden = ($attrs['isHidden'] === true || $attrs['isHidden'] === 'true'
             || $attrs['is_hidden'] === true || $attrs['is_hidden'] === 'true')
             || isset($attrs['hiddenAt']) && $attrs['hiddenAt'] !== null
@@ -55,8 +54,11 @@ class DecrementDrinkLogOnDiscussionHideInSaving
             return;
         }
 
-        // Use Discussion's tags() relationship (avoids hardcoding pivot table name)
-        $hasLogTag = $discussion->tags()->where('slug', $tagSlug)->exists();
+        // Check from Tag side: tag with this slug has this discussion
+        $hasLogTag = \Flarum\Tags\Tag::query()
+            ->where('slug', $tagSlug)
+            ->whereHas('discussions', fn ($q) => $q->where('discussions.id', $discussion->id))
+            ->exists();
         if (!$hasLogTag) {
             return;
         }
