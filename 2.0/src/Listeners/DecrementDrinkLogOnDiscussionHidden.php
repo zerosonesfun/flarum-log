@@ -2,12 +2,17 @@
 
 namespace ZerosOnesFun\Drinks\Listeners;
 
-use Flarum\Discussion\Event\Deleting;
+use Flarum\Discussion\Event\Hidden;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
 use ZerosOnesFun\Drinks\DrinkClick;
 
-class DecrementDrinkLogOnDiscussionDelete
+/**
+ * When a user "deletes" their discussion from the UI, Flarum hides it (soft delete)
+ * and dispatches Hidden, not Deleting. This listener decrements their drink total
+ * when they hide a discussion that has the Log tag.
+ */
+class DecrementDrinkLogOnDiscussionHidden
 {
     public function __construct(
         protected ExtensionManager $extensions,
@@ -15,14 +20,9 @@ class DecrementDrinkLogOnDiscussionDelete
     ) {
     }
 
-    public function handle(Deleting $event): void
+    public function handle(Hidden $event): void
     {
         $discussion = $event->discussion;
-
-        // Already hidden: we decremented when Hidden fired. Skip to avoid double decrement.
-        if ($discussion->hidden_at !== null) {
-            return;
-        }
 
         if (!$this->extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
             return;
@@ -38,7 +38,6 @@ class DecrementDrinkLogOnDiscussionDelete
             return;
         }
 
-        // Check if this discussion has the Log tag (relationship still loaded before delete)
         $hasLogTag = $discussion->tags()->where('slug', $tagSlug)->exists();
         if (!$hasLogTag) {
             return;

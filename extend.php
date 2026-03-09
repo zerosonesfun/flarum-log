@@ -11,7 +11,8 @@ use ZerosOnesFun\Drinks\DrinkClick;
 return [
     (new Extend\Event())
         ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
-        ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class),
+        ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
+        ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class),
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
         ->css(__DIR__ . '/less/forum.less')

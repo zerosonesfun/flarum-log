@@ -70,6 +70,23 @@ npm run build
 
 This updates `js/dist/forum.js` and `js/dist/admin.js`. Commit those files if you ship a pre-built bundle.
 
+## Troubleshooting
+
+**“Drink Logs” tab doesn’t appear on user profiles**
+
+The tab only shows when the forum has a valid Log tag. Check:
+
+1. **Tags extension** is enabled (Administration → Extensions).
+2. **A tag exists** whose slug matches Drink Log’s “Log tag slug” (default `log`). Create it under Administration → Tags if needed.
+3. **Clear Flarum cache** so the forum payload includes the tag id:  
+   `php flarum cache:clear`  
+   Then hard-refresh the forum (Ctrl+F5 / Cmd+Shift+R).
+4. If you installed from source (e.g. git), run `npm run build` in the extension’s `js` folder and deploy the updated `js/dist/forum.js`.
+
+**Profile drink total doesn’t decrease when a user deletes a log discussion**
+
+The extension now listens for both **Deleting** (hard delete) and **Hidden** (soft delete / “delete” in the UI). After updating, hiding or deleting a discussion that has the Log tag will decrement the author’s total. Clear cache and refresh; if it still doesn’t update, confirm the discussion had the Log tag and the Tags extension is enabled.
+
 ## Security
 
 - Only logged-in users see and can use the Drinking button.

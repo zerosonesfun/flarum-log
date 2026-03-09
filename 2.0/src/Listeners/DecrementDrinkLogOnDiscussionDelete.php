@@ -19,6 +19,11 @@ class DecrementDrinkLogOnDiscussionDelete
     {
         $discussion = $event->discussion;
 
+        // Already hidden: we decremented when Hidden fired. Skip to avoid double decrement.
+        if ($discussion->hidden_at !== null) {
+            return;
+        }
+
         if (!$this->extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
             return;
         }
