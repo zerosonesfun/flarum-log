@@ -82,22 +82,6 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       if (!isComposerTextarea(textarea) || textarea.getAttribute(VARIETY_ATTR)) return;
       textarea.setAttribute(VARIETY_ATTR, '1');
       attachVarietyAutocomplete(textarea, arr, {
-        createSuggestionElement(suffix, onAccept) {
-          const el = document.createElement('button');
-          el.type = 'button';
-          el.className = 'VarietyAutocomplete-suggestion';
-          el.textContent = suffix;
-          el.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onAccept();
-          });
-          el.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          });
-          return el;
-        },
         onChange(newText) {
           if (app.composer.fields && typeof app.composer.fields.content === 'function') {
             app.composer.fields.content(newText);
