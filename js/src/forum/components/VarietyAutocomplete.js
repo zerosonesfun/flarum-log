@@ -22,6 +22,7 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     const style = window.getComputedStyle(textarea);
     const mirror = document.createElement('div');
     mirror.setAttribute('aria-hidden', 'true');
+    // Force pre-wrap so newlines in text create new lines in the mirror (textarea behavior).
     mirror.style.cssText = [
       'position:fixed',
       'left:' + rect.left + 'px',
@@ -32,7 +33,7 @@ export function attachVarietyAutocomplete(textarea, list, options) {
       'font:' + style.font,
       'fontSize:' + style.fontSize,
       'lineHeight:' + style.lineHeight,
-      'whiteSpace:' + style.whiteSpace,
+      'whiteSpace:pre-wrap',
       'wordWrap:' + style.wordWrap,
       'overflow:auto',
       'visibility:hidden',
