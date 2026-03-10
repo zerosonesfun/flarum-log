@@ -9,7 +9,7 @@ import Link from 'flarum/common/components/Link';
 import Button from 'flarum/common/components/Button';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
 import DrinkLogsUserPage from './components/DrinkLogsUserPage';
-import { startVarietyAutocomplete } from './components/VarietyAutocompleteEditorDriver';
+import { attachVarietyAutocomplete } from './components/VarietyAutocomplete';
 
 export const extend = [];
 
@@ -67,7 +67,47 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       });
   }
 
-  startVarietyAutocomplete(app, () => app.forum.attribute('drinkVarietyAutocompleteList'));
+  const VARIETY_ATTR = 'data-drink-log-variety-attached';
+  function isDiscussionComposer(textarea) {
+    const composer = textarea.closest('.Composer');
+    if (!composer) return false;
+    return !!composer.querySelector('input[type="text"], .Composer-controls--title, input.Composer-controls-input');
+  }
+  function attachToComposerTextareas() {
+    const list = app.forum.attribute('drinkVarietyAutocompleteList');
+    let arr = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',').map((s) => s.trim()).filter(Boolean) : []);
+    if (arr.length === 0) return;
+    document.querySelectorAll('.Composer textarea, .ComposerBody textarea, [class*="Composer"] textarea').forEach((textarea) => {
+      if (textarea.tagName !== 'TEXTAREA' || textarea.getAttribute(VARIETY_ATTR)) return;
+      if (!isDiscussionComposer(textarea)) return;
+      textarea.setAttribute(VARIETY_ATTR, '1');
+      attachVarietyAutocomplete(textarea, arr, {
+        createSuggestionElement(suffix, onAccept) {
+          const el = document.createElement('button');
+          el.type = 'button';
+          el.className = 'VarietyAutocomplete-suggestion';
+          el.textContent = suffix;
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            onAccept();
+          });
+          return el;
+        },
+        getSuggestionContainer() {
+          return textarea.parentNode;
+        },
+        onChange(newText) {
+          if (app.composer.fields && typeof app.composer.fields.content === 'function') {
+            app.composer.fields.content(newText);
+          }
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        },
+      });
+    });
+  }
+  attachToComposerTextareas();
+  const varietyObserver = new MutationObserver(() => attachToComposerTextareas());
+  varietyObserver.observe(document.body, { childList: true, subtree: true });
 
   flarumExtend(IndexPage.prototype, 'sidebarItems', function (items) {
     if (!app.session.user) return items;

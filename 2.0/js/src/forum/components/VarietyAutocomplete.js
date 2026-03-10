@@ -81,6 +81,10 @@ export function attachVarietyAutocomplete(textarea, list, options) {
       hideSuggestion();
       return;
     }
+    if (prefix.length < 2) {
+      hideSuggestion();
+      return;
+    }
     const prefixLower = prefix.toLowerCase();
     const wordEndInLine = wordStartInLine + prefix.length;
     const matches = list.filter((w) => w.toLowerCase().slice(0, prefixLower.length) === prefixLower && w.length > prefixLower.length);
