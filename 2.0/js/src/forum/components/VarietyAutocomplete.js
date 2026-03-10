@@ -32,7 +32,7 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     if (!suggestionEl || !currentSuggestion) return;
     const { left, top } = getCaretPixelPosition(currentSuggestion.endOffset);
     suggestionEl.style.left = left + 'px';
-    suggestionEl.style.top = (top - 1.8) + 'px';
+    suggestionEl.style.top = (top - 1.7) + 'px';
   }
 
   function showSuggestion(suffix) {
@@ -115,6 +115,29 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  // Triggers: plain "variety", `Variety` in backticks, or `Location` in backticks. Autocomplete the next word after any of these.
+  const TRIGGER_REGEXES = [/variety\s+/gi, /`[Vv]ariety`\s*/gi, /`Location`\s*/gi];
+
+  function findWordStartAfterTrigger(line, cursorInLine) {
+    let bestWordStart = -1;
+    for (const re of TRIGGER_REGEXES) {
+      re.lastIndex = 0;
+      let match;
+      while ((match = re.exec(line)) !== null) {
+        const wordStartInLine = match.index + match[0].length;
+        if (cursorInLine < wordStartInLine) continue;
+        const prefix = line.slice(wordStartInLine, cursorInLine);
+        if (/\s/.test(prefix) || prefix.length < 2) continue;
+        if (wordStartInLine > bestWordStart) bestWordStart = wordStartInLine;
+      }
+    }
+    return bestWordStart;
+  }
+
+  function lineHasTrigger(line) {
+    return /variety/i.test(line) || /`[Vv]ariety`/.test(line) || /`Location`/.test(line);
+  }
+
   function update() {
     const text = textarea.value;
     const offset = getCaretOffset(textarea);
@@ -122,30 +145,18 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     const lineOffsetInText = lineStart;
     const cursorInLine = offset - lineOffsetInText;
 
-    if (!/variety/i.test(line)) {
+    if (!lineHasTrigger(line)) {
       hideSuggestion();
       return;
     }
 
-    const varietyMatch = line.match(/variety\s+/i);
-    if (!varietyMatch) {
+    const wordStartInLine = findWordStartAfterTrigger(line, cursorInLine);
+    if (wordStartInLine < 0) {
       hideSuggestion();
       return;
     }
-    const wordStartInLine = varietyMatch.index + varietyMatch[0].length;
-    if (cursorInLine <= wordStartInLine) {
-      hideSuggestion();
-      return;
-    }
+
     const prefix = line.slice(wordStartInLine, cursorInLine);
-    if (/\s/.test(prefix)) {
-      hideSuggestion();
-      return;
-    }
-    if (prefix.length < 2) {
-      hideSuggestion();
-      return;
-    }
     const prefixLower = prefix.toLowerCase();
     const wordEndInLine = wordStartInLine + prefix.length;
     const matches = list.filter((w) => w.toLowerCase().slice(0, prefixLower.length) === prefixLower && w.length > prefixLower.length);
