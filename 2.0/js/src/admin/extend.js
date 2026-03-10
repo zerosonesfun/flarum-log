@@ -37,5 +37,15 @@ export default [
         placeholder: 'log',
       }),
       10
+    )
+    .setting(
+      () => ({
+        setting: 'zerosonesfun-flarum-log.variety_autocomplete_list',
+        label: app.translator.trans('zerosonesfun-log.admin.variety_autocomplete_list_label'),
+        help: app.translator.trans('zerosonesfun-log.admin.variety_autocomplete_list_help'),
+        type: 'textarea',
+        placeholder: 'strong, mild, light, dark',
+      }),
+      5
     ),
 ];

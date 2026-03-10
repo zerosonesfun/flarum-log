@@ -11,6 +11,8 @@ zerosonesfun-log:
     cooldown_minutes_help: "How many minutes before a user can click again (1–1440)."
     log_tag_slug_label: Log tag slug
     log_tag_slug_help: "Tag slug to attach to new \"Log - date\" discussions when the Tags extension is enabled. Leave empty to skip auto-tagging."
+    variety_autocomplete_list_label: Variety autocomplete list
+    variety_autocomplete_list_help: "Comma-separated words or phrases to suggest after \"variety\" in log discussion composer body (e.g. strong, mild, light). Leave empty to disable."
   forum:
     drinking_button: '{count} Drinking'
     cooldown_message: You can only add to the live count every {minutes} minutes.
@@ -29,6 +31,8 @@ zerosonesfun-flarum-log:
     cooldown_minutes_help: "How many minutes before a user can click again (1–1440)."
     log_tag_slug_label: Log tag slug
     log_tag_slug_help: "Tag slug to attach to new \"Log - date\" discussions when the Tags extension is enabled. Leave empty to skip auto-tagging."
+    variety_autocomplete_list_label: Variety autocomplete list
+    variety_autocomplete_list_help: "Comma-separated words or phrases to suggest after \"variety\" in log discussion composer body (e.g. strong, mild, light). Leave empty to disable."
   forum:
     drinking_button: '{count} Drinking'
     cooldown_message: You can only add to the live count every {minutes} minutes.

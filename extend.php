@@ -37,6 +37,7 @@ return [
         ->default('zerosonesfun-flarum-log.button_label', '{count} Drinking')
         ->default('zerosonesfun-flarum-log.cooldown_minutes', '30')
         ->default('zerosonesfun-flarum-log.log_tag_slug', 'log')
+        ->default('zerosonesfun-flarum-log.variety_autocomplete_list', '')
         ->serializeToForum('drinkButtonLabel', 'zerosonesfun-flarum-log.button_label', null, '{count} Drinking')
         ->serializeToForum('drinkCooldownMinutes', 'zerosonesfun-flarum-log.cooldown_minutes', null, '30')
         ->serializeToForum('drinkLogTagSlug', 'zerosonesfun-flarum-log.log_tag_slug', null, 'log'),
@@ -65,6 +66,15 @@ return [
             $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
 
             return $tag ? (int) $tag->id : null;
+        })
+        ->attribute('drinkVarietyAutocompleteList', function (ForumSerializer $serializer) {
+            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+            $raw = trim((string) $settings->get('zerosonesfun-flarum-log.variety_autocomplete_list', ''));
+            if ($raw === '') {
+                return [];
+            }
+            $list = array_map('trim', explode(',', $raw));
+            return array_values(array_filter($list, fn ($s) => $s !== ''));
         }),
 
     (new Extend\ApiSerializer(UserSerializer::class))

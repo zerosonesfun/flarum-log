@@ -2,10 +2,10 @@
 
 namespace ZerosOnesFun\Drinks;
 
+use Flarum\Api\Context;
 use Flarum\Discussion\Event\Saving;
 use Flarum\Extend;
 use Flarum\User\User;
-use Tobyz\JsonApiServer\Context;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 return [
@@ -39,26 +39,27 @@ return [
         ->default('zerosonesfun-flarum-log.button_label', '{count} Drinking')
         ->default('zerosonesfun-flarum-log.cooldown_minutes', '30')
         ->default('zerosonesfun-flarum-log.log_tag_slug', 'log')
+        ->default('zerosonesfun-flarum-log.variety_autocomplete_list', '')
         ->serializeToForum('drinkButtonLabel', 'zerosonesfun-flarum-log.button_label', null, '{count} Drinking')
         ->serializeToForum('drinkCooldownMinutes', 'zerosonesfun-flarum-log.cooldown_minutes', null, '30')
         ->serializeToForum('drinkLogTagSlug', 'zerosonesfun-flarum-log.log_tag_slug', null, 'log'),
 
-    // Flarum 2.0: ApiSerializer removed; use ApiResource to add attributes to Forum and User.
+    // Flarum 2.0: ApiSerializer removed; use ApiResource + Flarum\Api\Schema (see docs.flarum.org/2.x/extend/update-2_0 and update-2_0-api).
     (new Extend\ApiResource(\Flarum\Api\Resource\ForumResource::class))
         ->fields(fn () => [
-            \Tobyz\JsonApiServer\Schema\Number::make('drinkCount')
+            \Flarum\Api\Schema\Number::make('drinkCount')
                 ->get(function (object $forum, Context $context) {
                     $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
                     $minutes = (int) $settings->get('zerosonesfun-flarum-log.cooldown_minutes', 30) ?: 30;
                     $minutes = max(1, min(1440, $minutes));
                     return DrinkClick::currentCount($minutes);
                 }),
-            \Tobyz\JsonApiServer\Schema\Boolean::make('drinkDirectLinksEnabled')
+            \Flarum\Api\Schema\Boolean::make('drinkDirectLinksEnabled')
                 ->get(function (object $forum, Context $context) {
                     $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
                     return $extensions->isEnabled('fof-direct-links');
                 }),
-            \Tobyz\JsonApiServer\Schema\Number::make('drinkLogTagId')
+            \Flarum\Api\Schema\Number::make('drinkLogTagId')
                 ->get(function (object $forum, Context $context) {
                     $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
                     if (!$extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
@@ -73,17 +74,27 @@ return [
 
                     return $tag ? (int) $tag->id : null;
                 }),
+            \Flarum\Api\Schema\Arr::make('drinkVarietyAutocompleteList')
+                ->get(function (object $forum, Context $context) {
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $raw = trim((string) $settings->get('zerosonesfun-flarum-log.variety_autocomplete_list', ''));
+                    if ($raw === '') {
+                        return [];
+                    }
+                    $list = array_map('trim', explode(',', $raw));
+                    return array_values(array_filter($list, fn ($s) => $s !== ''));
+                }),
         ]),
 
     (new Extend\ApiResource(\Flarum\Api\Resource\UserResource::class))
         ->fields(fn () => [
-            \Tobyz\JsonApiServer\Schema\Number::make('drinkLogTotal')
+            \Flarum\Api\Schema\Number::make('drinkLogTotal')
                 ->get(function (User $user, Context $context) {
                     $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
                     $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
                     return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
                 }),
-            \Tobyz\JsonApiServer\Schema\Number::make('drinkLogDiscussionsCount')
+            \Flarum\Api\Schema\Number::make('drinkLogDiscussionsCount')
                 ->get(function (User $user, Context $context) {
                     $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
                     $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));

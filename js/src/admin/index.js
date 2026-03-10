@@ -39,6 +39,13 @@ const settingConfigs = [
     { type: 'text', placeholder: 'log' }
   ),
   10,
+  makeSetting(
+    'zerosonesfun-flarum-log.variety_autocomplete_list',
+    'zerosonesfun-log.admin.variety_autocomplete_list_label',
+    'zerosonesfun-log.admin.variety_autocomplete_list_help',
+    { type: 'textarea', placeholder: 'strong, mild, light, dark' }
+  ),
+  5,
 ];
 
 function registerSettings(extensionId) {
@@ -46,7 +53,8 @@ function registerSettings(extensionId) {
     .for(extensionId)
     .registerSetting(settingConfigs[0], settingConfigs[1])
     .registerSetting(settingConfigs[2], settingConfigs[3])
-    .registerSetting(settingConfigs[4], settingConfigs[5]);
+    .registerSetting(settingConfigs[4], settingConfigs[5])
+    .registerSetting(settingConfigs[6], settingConfigs[7]);
 }
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
