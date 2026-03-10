@@ -1,89 +1,48 @@
 /**
  * Attaches "variety" word autocomplete to a textarea.
- * Shows the suggestion as plain gray text (ghost) at the current caret; Tab or click converts it to real text.
+ * Suggestion appears as plain gray text below the textarea; Tab or click converts it to real text.
  */
 export function attachVarietyAutocomplete(textarea, list, options) {
   if (!textarea || !Array.isArray(list) || list.length === 0) return () => {};
 
-  let ghostEl = null;
+  let suggestionEl = null;
   let currentSuggestion = null; // { full, suffix, startOffset, endOffset }
 
   function hideSuggestion() {
     currentSuggestion = null;
-    if (ghostEl && ghostEl.parentNode) {
-      ghostEl.parentNode.removeChild(ghostEl);
-      ghostEl = null;
+    if (suggestionEl && suggestionEl.parentNode) {
+      suggestionEl.parentNode.removeChild(suggestionEl);
+      suggestionEl = null;
     }
   }
 
-  /**
-   * Get caret position in viewport (px) using a mirror div so text wraps like the textarea.
-   */
-  function getCaretPixelPosition(cursorOffset) {
-    const rect = textarea.getBoundingClientRect();
-    const style = window.getComputedStyle(textarea);
-    const mirror = document.createElement('div');
-    mirror.setAttribute('aria-hidden', 'true');
-    mirror.style.position = 'fixed';
-    mirror.style.left = rect.left + 'px';
-    mirror.style.top = rect.top + 'px';
-    mirror.style.width = textarea.offsetWidth + 'px';
-    mirror.style.height = textarea.offsetHeight + 'px';
-    mirror.style.padding = style.padding;
-    mirror.style.font = style.font;
-    mirror.style.fontSize = style.fontSize;
-    mirror.style.lineHeight = style.lineHeight;
-    mirror.style.whiteSpace = style.whiteSpace;
-    mirror.style.wordWrap = style.wordWrap;
-    mirror.style.overflow = 'auto';
-    mirror.style.visibility = 'hidden';
-    mirror.style.pointerEvents = 'none';
-    mirror.style.boxSizing = style.boxSizing;
-    mirror.style.border = style.border;
-    mirror.style.borderWidth = style.borderWidth;
-
-    const textBefore = textarea.value.slice(0, cursorOffset);
-    const span = document.createElement('span');
-    span.setAttribute('data-caret', '');
-    mirror.appendChild(document.createTextNode(textBefore));
-    mirror.appendChild(span);
-    document.body.appendChild(mirror);
-    mirror.scrollTop = textarea.scrollTop;
-    mirror.scrollLeft = textarea.scrollLeft;
-
-    const spanRect = span.getBoundingClientRect();
-    const left = spanRect.left;
-    const top = spanRect.top;
-    mirror.parentNode.removeChild(mirror);
-    return { left, top };
-  }
-
   function showSuggestion(suffix) {
-    hideSuggestion();
+    // Remove previous suggestion DOM only; do not clear currentSuggestion here (caller set it).
+    if (suggestionEl && suggestionEl.parentNode) {
+      suggestionEl.parentNode.removeChild(suggestionEl);
+      suggestionEl = null;
+    }
     if (!suffix || !currentSuggestion) return;
 
-    const cursorOffset = currentSuggestion.endOffset;
-    const { left, top } = getCaretPixelPosition(cursorOffset);
+    suggestionEl = document.createElement('span');
+    suggestionEl.className = 'VarietyAutocomplete-ghost';
+    suggestionEl.textContent = suffix;
+    const rect = textarea.getBoundingClientRect();
+    document.body.appendChild(suggestionEl);
+    suggestionEl.style.position = 'fixed';
+    suggestionEl.style.left = rect.left + 'px';
+    suggestionEl.style.top = rect.top + rect.height + 4 + 'px';
+    suggestionEl.style.zIndex = '10000';
+    suggestionEl.style.pointerEvents = 'auto';
+    suggestionEl.style.cursor = 'pointer';
+    suggestionEl.style.color = '#999';
 
-    ghostEl = document.createElement('span');
-    ghostEl.className = 'VarietyAutocomplete-ghost';
-    ghostEl.textContent = suffix;
-    ghostEl.style.position = 'fixed';
-    ghostEl.style.left = left + 'px';
-    ghostEl.style.top = top + 'px';
-    ghostEl.style.zIndex = '10000';
-    ghostEl.style.pointerEvents = 'auto';
-    ghostEl.style.cursor = 'pointer';
-    ghostEl.style.color = '#999';
-    ghostEl.style.whiteSpace = 'pre';
-    document.body.appendChild(ghostEl);
-
-    ghostEl.addEventListener('mousedown', (e) => {
+    suggestionEl.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       acceptSuggestion();
     });
-    ghostEl.addEventListener('click', (e) => {
+    suggestionEl.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
@@ -119,7 +78,6 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     const newValue = before + newText + after;
     const newCaret = start + newText.length;
 
-    // Try execCommand for better framework compatibility (same as Flarum core insertText)
     textarea.setSelectionRange(start, end);
     textarea.focus();
     let didExec = false;
@@ -209,24 +167,14 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     scheduleUpdate();
   }
 
-  function onScroll() {
-    if (currentSuggestion && ghostEl) {
-      const { left, top } = getCaretPixelPosition(currentSuggestion.endOffset);
-      ghostEl.style.left = left + 'px';
-      ghostEl.style.top = top + 'px';
-    }
-  }
-
   textarea.addEventListener('input', scheduleUpdate);
   textarea.addEventListener('keyup', scheduleUpdate);
   textarea.addEventListener('keydown', onKeydown);
-  textarea.addEventListener('scroll', onScroll);
 
   return function detach() {
     hideSuggestion();
     textarea.removeEventListener('input', scheduleUpdate);
     textarea.removeEventListener('keyup', scheduleUpdate);
     textarea.removeEventListener('keydown', onKeydown);
-    textarea.removeEventListener('scroll', onScroll);
   };
 }
