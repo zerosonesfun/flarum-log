@@ -11,9 +11,8 @@ import UserPage from 'ext:flarum/forum/components/UserPage';
 import Link from 'ext:flarum/common/components/Link';
 import Button from 'ext:flarum/common/components/Button';
 import DiscussionComposer from 'ext:flarum/forum/components/DiscussionComposer';
-import TextEditor from 'ext:flarum/common/components/TextEditor';
 import DrinkLogsUserPage from './components/DrinkLogsUserPage';
-import { attachVarietyAutocomplete } from './components/VarietyAutocomplete';
+import { startVarietyAutocomplete } from './components/VarietyAutocompleteEditorDriver';
 
 export const extend = [];
 
@@ -71,80 +70,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
       });
   }
 
-  function isLogComposer() {
-    const title = (app.composer.fields && app.composer.fields.title && typeof app.composer.fields.title === 'function' && app.composer.fields.title()) || '';
-    if (String(title).trim().toLowerCase().startsWith('log - ')) return true;
-    const bodyComp = app.composer.body && typeof app.composer.body === 'function' && app.composer.body();
-    if (bodyComp && bodyComp.attrs && bodyComp.attrs.composer) {
-      const comp = bodyComp.attrs.composer;
-      const disc = comp.discussion || (comp.state && comp.state.discussion);
-      if (disc && typeof disc.tags === 'function') {
-        const tagId = app.forum.attribute('drinkLogTagId');
-        if (tagId && disc.tags().some((t) => t.id() === String(tagId))) return true;
-      }
-    }
-    return false;
-  }
-
-  function tryAttachVarietyAutocomplete(textarea) {
-    if (!textarea || textarea.getAttribute('data-drink-log-autocomplete')) return null;
-    let list = app.forum.attribute('drinkVarietyAutocompleteList');
-    if (typeof list === 'string') list = list.split(',').map((s) => s.trim()).filter(Boolean);
-    if (!Array.isArray(list) || list.length === 0) return null;
-    textarea.setAttribute('data-drink-log-autocomplete', '1');
-    const detach = attachVarietyAutocomplete(textarea, list, {
-      createSuggestionElement(suffix, onAccept) {
-        const el = document.createElement('button');
-        el.type = 'button';
-        el.className = 'VarietyAutocomplete-suggestion';
-        el.textContent = suffix;
-        el.addEventListener('click', (e) => {
-          e.preventDefault();
-          onAccept();
-        });
-        return el;
-      },
-      getSuggestionContainer() {
-        return textarea.parentNode;
-      },
-      onChange(newText) {
-        if (app.composer.fields && typeof app.composer.fields.content === 'function') {
-          app.composer.fields.content(newText);
-        }
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      },
-    });
-    return () => {
-      textarea.removeAttribute('data-drink-log-autocomplete');
-      detach();
-    };
-  }
-
-  flarumExtend(TextEditor.prototype, 'oncreate', function (vnode) {
-    const self = this;
-    if (!self.element || !self.element.closest('.Composer')) return;
-    let detachVariety = null;
-    function run() {
-      if (detachVariety) return;
-      const textarea = self.element.querySelector && self.element.querySelector('textarea');
-      if (textarea) detachVariety = tryAttachVarietyAutocomplete(textarea);
-    }
-    setTimeout(run, 0);
-    setTimeout(run, 100);
-    setTimeout(run, 400);
-    self._varietyAutocompleteDetach = () => {
-      if (detachVariety) {
-        detachVariety();
-        detachVariety = null;
-      }
-    };
-  });
-
-  flarumExtend(TextEditor.prototype, 'onremove', function () {
-    if (this._varietyAutocompleteDetach) {
-      this._varietyAutocompleteDetach();
-    }
-  });
+  startVarietyAutocomplete(app, () => app.forum.attribute('drinkVarietyAutocompleteList'));
 
   // Flarum 2.0: IndexPage.prototype.sidebarItems → IndexSidebar.prototype.items
   flarumExtend(IndexSidebar.prototype, 'items', function (items) {
