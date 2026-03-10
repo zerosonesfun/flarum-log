@@ -18,20 +18,17 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     }
   }
 
-  function showSuggestion(suffix, rect) {
+  function showSuggestion(suffix) {
     hideSuggestion();
     if (!suffix || !options.createSuggestionElement) return;
     suggestionEl = options.createSuggestionElement(suffix, () => acceptSuggestion());
-    const container = options.getSuggestionContainer ? options.getSuggestionContainer() : textarea.parentNode;
-    if (container) {
-      container.style.position = container.style.position || 'relative';
-      suggestionEl.style.position = 'absolute';
-      suggestionEl.style.left = (rect ? rect.left : 0) + 'px';
-      suggestionEl.style.top = (rect ? rect.bottom : textarea.offsetHeight) + 'px';
-      suggestionEl.style.zIndex = '1000';
-      suggestionEl.style.pointerEvents = 'auto';
-      container.appendChild(suggestionEl);
-    }
+    const rect = textarea.getBoundingClientRect();
+    document.body.appendChild(suggestionEl);
+    suggestionEl.style.position = 'fixed';
+    suggestionEl.style.left = rect.left + 'px';
+    suggestionEl.style.top = (rect.top + rect.height + 4) + 'px';
+    suggestionEl.style.zIndex = '10000';
+    suggestionEl.style.pointerEvents = 'auto';
   }
 
   function getCaretOffset(el) {
@@ -100,13 +97,7 @@ export function attachVarietyAutocomplete(textarea, list, options) {
       startOffset: lineOffsetInText + wordStartInLine,
       endOffset: lineOffsetInText + wordEndInLine,
     };
-    const rect = textarea.getBoundingClientRect();
-    const containerRect = textarea.parentNode.getBoundingClientRect();
-    showSuggestion(suffix, {
-      left: 0,
-      top: rect.bottom - containerRect.top,
-      bottom: rect.bottom - containerRect.top + 24,
-    });
+    showSuggestion(suffix);
   }
 
   function acceptSuggestion() {
@@ -115,36 +106,36 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     const end = currentSuggestion.endOffset;
     const text = textarea.value;
     const newText = text.slice(0, start) + currentSuggestion.full + text.slice(end);
-    textarea.value = newText;
-    setCaretOffset(textarea, start + currentSuggestion.full.length);
+    const newCaret = start + currentSuggestion.full.length;
     hideSuggestion();
     if (options.onChange) options.onChange(newText);
+    textarea.value = newText;
+    setCaretOffset(textarea, newCaret);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   }
 
-  function onInput() {
-    update();
-  }
-
-  function onKeyup() {
-    update();
+  function scheduleUpdate() {
+    requestAnimationFrame(() => update());
   }
 
   function onKeydown(e) {
     if (e.key === 'Tab' && currentSuggestion) {
       e.preventDefault();
       acceptSuggestion();
+      return;
     }
+    scheduleUpdate();
   }
 
-  textarea.addEventListener('input', onInput);
-  textarea.addEventListener('keyup', onKeyup);
+  textarea.addEventListener('input', scheduleUpdate);
+  textarea.addEventListener('keyup', scheduleUpdate);
   textarea.addEventListener('keydown', onKeydown);
 
   return function detach() {
     hideSuggestion();
-    textarea.removeEventListener('input', onInput);
-    textarea.removeEventListener('keyup', onKeyup);
+    textarea.removeEventListener('input', scheduleUpdate);
+    textarea.removeEventListener('keyup', scheduleUpdate);
     textarea.removeEventListener('keydown', onKeydown);
   };
 }
