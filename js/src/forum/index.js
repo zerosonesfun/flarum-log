@@ -74,6 +74,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return !!composer.querySelector('input[type="text"], .Composer-controls--title, input.Composer-controls-input');
   }
   function attachToComposerTextareas() {
+    if (!app.forum || typeof app.forum.attribute !== 'function') return;
     const list = app.forum.attribute('drinkVarietyAutocompleteList');
     let arr = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',').map((s) => s.trim()).filter(Boolean) : []);
     if (arr.length === 0) return;
