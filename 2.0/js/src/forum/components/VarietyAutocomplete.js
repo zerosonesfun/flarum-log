@@ -1,3 +1,5 @@
+import getCaretCoordinates from 'textarea-caret';
+
 /**
  * Attaches "variety" word autocomplete to a textarea.
  * Suggestion appears as plain gray text at the caret; Tab or click converts it to real text.
@@ -16,42 +18,14 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     }
   }
 
-  /** Get caret position in viewport (px) using a mirror div so layout matches the textarea. */
+  /** Get caret position in viewport (px) using textarea-caret (same approach as Flarum core). */
   function getCaretPixelPosition(cursorOffset) {
     const rect = textarea.getBoundingClientRect();
-    const style = window.getComputedStyle(textarea);
-    const mirror = document.createElement('div');
-    mirror.setAttribute('aria-hidden', 'true');
-    // Force pre-wrap so newlines in text create new lines in the mirror (textarea behavior).
-    mirror.style.cssText = [
-      'position:fixed',
-      'left:' + rect.left + 'px',
-      'top:' + rect.top + 'px',
-      'width:' + textarea.offsetWidth + 'px',
-      'height:' + textarea.offsetHeight + 'px',
-      'padding:' + style.padding,
-      'font:' + style.font,
-      'fontSize:' + style.fontSize,
-      'lineHeight:' + style.lineHeight,
-      'whiteSpace:pre-wrap',
-      'wordWrap:' + style.wordWrap,
-      'overflow:auto',
-      'visibility:hidden',
-      'pointerEvents:none',
-      'boxSizing:' + style.boxSizing,
-    ].join(';');
-    const textBefore = textarea.value.slice(0, cursorOffset);
-    const span = document.createElement('span');
-    mirror.appendChild(document.createTextNode(textBefore));
-    mirror.appendChild(span);
-    document.body.appendChild(mirror);
-    mirror.scrollTop = textarea.scrollTop;
-    mirror.scrollLeft = textarea.scrollLeft;
-    const spanRect = span.getBoundingClientRect();
-    const left = spanRect.left;
-    const top = spanRect.top;
-    mirror.parentNode.removeChild(mirror);
-    return { left, top };
+    const coords = getCaretCoordinates(textarea, cursorOffset);
+    return {
+      left: rect.left + coords.left - textarea.scrollLeft,
+      top: rect.top + coords.top - textarea.scrollTop,
+    };
   }
 
   function positionGhostAtCaret() {

@@ -3,6 +3,7 @@
   "name": "@zerosonesfun/flarum-log",
   "dependencies": {
     "flarum-webpack-config": "^3.0.0",
+    "textarea-caret": "^3.1.0",
     "webpack": "^5.0.0",
     "webpack-cli": "^4.0.0"
   },
