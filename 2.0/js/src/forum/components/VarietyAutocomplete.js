@@ -1,6 +1,6 @@
 /**
  * Attaches "variety" word autocomplete to a textarea.
- * Suggestion appears as plain gray text below the textarea; Tab or click converts it to real text.
+ * Suggestion appears as plain gray text at the caret; Tab or click converts it to real text.
  */
 export function attachVarietyAutocomplete(textarea, list, options) {
   if (!textarea || !Array.isArray(list) || list.length === 0) return () => {};
@@ -16,6 +16,50 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     }
   }
 
+  /** Get caret position in viewport (px) using a mirror div so layout matches the textarea. */
+  function getCaretPixelPosition(cursorOffset) {
+    const rect = textarea.getBoundingClientRect();
+    const style = window.getComputedStyle(textarea);
+    const mirror = document.createElement('div');
+    mirror.setAttribute('aria-hidden', 'true');
+    mirror.style.cssText = [
+      'position:fixed',
+      'left:' + rect.left + 'px',
+      'top:' + rect.top + 'px',
+      'width:' + textarea.offsetWidth + 'px',
+      'height:' + textarea.offsetHeight + 'px',
+      'padding:' + style.padding,
+      'font:' + style.font,
+      'fontSize:' + style.fontSize,
+      'lineHeight:' + style.lineHeight,
+      'whiteSpace:' + style.whiteSpace,
+      'wordWrap:' + style.wordWrap,
+      'overflow:auto',
+      'visibility:hidden',
+      'pointerEvents:none',
+      'boxSizing:' + style.boxSizing,
+    ].join(';');
+    const textBefore = textarea.value.slice(0, cursorOffset);
+    const span = document.createElement('span');
+    mirror.appendChild(document.createTextNode(textBefore));
+    mirror.appendChild(span);
+    document.body.appendChild(mirror);
+    mirror.scrollTop = textarea.scrollTop;
+    mirror.scrollLeft = textarea.scrollLeft;
+    const spanRect = span.getBoundingClientRect();
+    const left = spanRect.left;
+    const top = spanRect.top;
+    mirror.parentNode.removeChild(mirror);
+    return { left, top };
+  }
+
+  function positionGhostAtCaret() {
+    if (!suggestionEl || !currentSuggestion) return;
+    const { left, top } = getCaretPixelPosition(currentSuggestion.endOffset);
+    suggestionEl.style.left = left + 'px';
+    suggestionEl.style.top = top + 'px';
+  }
+
   function showSuggestion(suffix) {
     // Remove previous suggestion DOM only; do not clear currentSuggestion here (caller set it).
     if (suggestionEl && suggestionEl.parentNode) {
@@ -27,15 +71,14 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     suggestionEl = document.createElement('span');
     suggestionEl.className = 'VarietyAutocomplete-ghost';
     suggestionEl.textContent = suffix;
-    const rect = textarea.getBoundingClientRect();
     document.body.appendChild(suggestionEl);
     suggestionEl.style.position = 'fixed';
-    suggestionEl.style.left = rect.left + 'px';
-    suggestionEl.style.top = rect.top + rect.height + 4 + 'px';
     suggestionEl.style.zIndex = '10000';
     suggestionEl.style.pointerEvents = 'auto';
     suggestionEl.style.cursor = 'pointer';
-    suggestionEl.style.color = '#999';
+    suggestionEl.style.color = '#666';
+    suggestionEl.style.whiteSpace = 'pre';
+    positionGhostAtCaret();
 
     suggestionEl.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -167,14 +210,20 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     scheduleUpdate();
   }
 
+  function onScroll() {
+    positionGhostAtCaret();
+  }
+
   textarea.addEventListener('input', scheduleUpdate);
   textarea.addEventListener('keyup', scheduleUpdate);
   textarea.addEventListener('keydown', onKeydown);
+  textarea.addEventListener('scroll', onScroll);
 
   return function detach() {
     hideSuggestion();
     textarea.removeEventListener('input', scheduleUpdate);
     textarea.removeEventListener('keyup', scheduleUpdate);
     textarea.removeEventListener('keydown', onKeydown);
+    textarea.removeEventListener('scroll', onScroll);
   };
 }
