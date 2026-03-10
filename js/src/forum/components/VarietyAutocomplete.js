@@ -126,6 +126,10 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     update();
   }
 
+  function onKeyup() {
+    update();
+  }
+
   function onKeydown(e) {
     if (e.key === 'Tab' && currentSuggestion) {
       e.preventDefault();
@@ -134,11 +138,13 @@ export function attachVarietyAutocomplete(textarea, list, options) {
   }
 
   textarea.addEventListener('input', onInput);
+  textarea.addEventListener('keyup', onKeyup);
   textarea.addEventListener('keydown', onKeydown);
 
   return function detach() {
     hideSuggestion();
     textarea.removeEventListener('input', onInput);
+    textarea.removeEventListener('keyup', onKeyup);
     textarea.removeEventListener('keydown', onKeydown);
   };
 }

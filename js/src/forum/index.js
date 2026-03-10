@@ -68,10 +68,10 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   }
 
   const VARIETY_ATTR = 'data-drink-log-variety-attached';
-  function isDiscussionComposer(textarea) {
-    const composer = textarea.closest('.Composer');
-    if (!composer) return false;
-    return !!composer.querySelector('input[type="text"], .Composer-controls--title, input.Composer-controls-input');
+  function isComposerTextarea(textarea) {
+    if (!textarea || textarea.tagName !== 'TEXTAREA') return false;
+    const composer = textarea.closest('.Composer, .ComposerBody, [class*="Composer"]');
+    return !!composer;
   }
   function attachToComposerTextareas() {
     if (!app.forum || typeof app.forum.attribute !== 'function') return;
@@ -79,8 +79,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     let arr = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',').map((s) => s.trim()).filter(Boolean) : []);
     if (arr.length === 0) return;
     document.querySelectorAll('.Composer textarea, .ComposerBody textarea, [class*="Composer"] textarea').forEach((textarea) => {
-      if (textarea.tagName !== 'TEXTAREA' || textarea.getAttribute(VARIETY_ATTR)) return;
-      if (!isDiscussionComposer(textarea)) return;
+      if (!isComposerTextarea(textarea) || textarea.getAttribute(VARIETY_ATTR)) return;
       textarea.setAttribute(VARIETY_ATTR, '1');
       attachVarietyAutocomplete(textarea, arr, {
         createSuggestionElement(suffix, onAccept) {
