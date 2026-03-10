@@ -32,7 +32,7 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     if (!suggestionEl || !currentSuggestion) return;
     const { left, top } = getCaretPixelPosition(currentSuggestion.endOffset);
     suggestionEl.style.left = left + 'px';
-    suggestionEl.style.top = (top - 1.2) + 'px';
+    suggestionEl.style.top = (top - 1.8) + 'px';
   }
 
   function showSuggestion(suffix) {
