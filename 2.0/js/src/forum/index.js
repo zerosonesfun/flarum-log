@@ -106,6 +106,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   const varietyObserver = new MutationObserver(() => attachToComposerTextareas());
   varietyObserver.observe(document.body, { childList: true, subtree: true });
 
+  // When composer has log tag and user taps .item-close, refresh page. Left in place for later troubleshooting (e.g. URL-param composer).
   const CLOSE_BOUND_ATTR = 'data-drink-log-close-bound';
 
   function composerHasLogTag() {
@@ -123,8 +124,11 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
 
   function shouldRefreshOnClose() {
     if (!app.composer) return false;
-    const visible = typeof app.composer.visible === 'function' ? app.composer.visible() : !!app.composer.visible;
-    if (!visible) return false;
+    const composerEl = document.querySelector('.Composer');
+    if (!composerEl) return false;
+    const expanded = typeof app.composer.visible === 'function' ? app.composer.visible() : !!app.composer.visible;
+    const minimized = composerEl.classList.contains('minimized');
+    if (!expanded && !minimized) return false;
     return composerHasLogTag();
   }
 
