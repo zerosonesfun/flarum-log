@@ -1,13 +1,35 @@
 /**
- * When the composer body contains `Location`, request geolocation (once per composer),
- * reverse-geocode via Nominatim, and insert the result after `Location`.
- * Uses a cache so subsequent composers with `Location` don't re-request permission.
+ * When the composer body contains `Date`, `Time`, or `Location`, fill them once per composer:
+ * - `Date` → today's date (device local) MM/DD/YYYY
+ * - `Time` → current time (device local) HH:MM AM/PM TIMEZONE
+ * - `Location` → geolocation + reverse geocode (once per composer; cached after first success).
  */
 
+const DATE_MARKER = '`Date`';
+const TIME_MARKER = '`Time`';
 const LOCATION_MARKER = '`Location`';
+const DATE_ATTR = 'data-drink-log-date-filled';
+const TIME_ATTR = 'data-drink-log-time-filled';
 const LOCATION_ATTR = 'data-drink-log-location-handled';
 
 let cachedLocation = null;
+
+function getDateString() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function getTimeString() {
+  return new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short',
+  });
+}
 
 async function getLocationString() {
   if (!navigator.geolocation) {
@@ -36,11 +58,14 @@ async function getLocationString() {
   const data = await res.json();
   const addr = data.address || {};
 
-  const city =
+  const locality =
     addr.city ||
     addr.town ||
     addr.village ||
     addr.hamlet ||
+    addr.suburb ||
+    addr.neighbourhood ||
+    addr.county ||
     '';
 
   const state = addr.state || addr.state_code || '';
@@ -48,31 +73,54 @@ async function getLocationString() {
     ? addr.country_code.toUpperCase()
     : (addr.country || '');
 
-  let location = city;
-  if (state) location += `, ${state}`;
-  else if (country) location += `, ${country}`;
+  let location = locality;
+  if (state) location += location ? `, ${state}` : state;
+  else if (country) location += location ? `, ${country}` : country;
 
   return location || 'Unknown';
+}
+
+function replaceMarkerInValue(value, marker, replacement) {
+  const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(new RegExp(escaped + '\\s*'), marker + ' ' + replacement);
 }
 
 function insertLocationAfterMarker(textarea, location, onChange) {
   const value = textarea.value;
   if (!value.includes(LOCATION_MARKER)) return;
-
-  // Replace first `Location` (and any following space) with `Location` <result>
-  const newValue = value.replace(
-    new RegExp(LOCATION_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*'),
-    LOCATION_MARKER + ' ' + location
-  );
+  const newValue = replaceMarkerInValue(value, LOCATION_MARKER, location);
   if (newValue === value) return;
-
   textarea.value = newValue;
   if (onChange) onChange(newValue);
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+function tryPopulateDateAndTime(textarea, onChange) {
+  if (!textarea) return;
+  let value = textarea.value;
+  let updated = false;
+  if (value.includes(DATE_MARKER) && !textarea.getAttribute(DATE_ATTR)) {
+    textarea.setAttribute(DATE_ATTR, '1');
+    value = replaceMarkerInValue(value, DATE_MARKER, getDateString());
+    updated = true;
+  }
+  if (value.includes(TIME_MARKER) && !textarea.getAttribute(TIME_ATTR)) {
+    textarea.setAttribute(TIME_ATTR, '1');
+    value = replaceMarkerInValue(value, TIME_MARKER, getTimeString());
+    updated = true;
+  }
+  if (updated) {
+    textarea.value = value;
+    if (onChange) onChange(value);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
 function scheduleCheck(textarea, onChange) {
-  requestAnimationFrame(() => tryPopulateLocation(textarea, onChange));
+  requestAnimationFrame(() => {
+    tryPopulateDateAndTime(textarea, onChange);
+    tryPopulateLocation(textarea, onChange);
+  });
 }
 
 function tryPopulateLocation(textarea, onChange) {
