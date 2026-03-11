@@ -31,6 +31,48 @@ function getTimeString() {
   });
 }
 
+const NOMINATIM_HEADERS = {
+  Accept: 'application/json',
+  'Accept-Language': 'en',
+  'User-Agent': 'FlarumDrinkLog/1.0 (Flarum extension; geolocation for composer)',
+};
+
+function parseAddressFromResponse(data) {
+  const addr = (data && data.address) || {};
+  const cityLevel =
+    addr.city ||
+    addr.town ||
+    addr.village ||
+    addr.hamlet ||
+    addr.suburb ||
+    addr.neighbourhood ||
+    '';
+  const locality = cityLevel || addr.county || '';
+  const state = addr.state || addr.state_code || '';
+  const country = addr.country_code
+    ? addr.country_code.toUpperCase()
+    : (addr.country || '');
+  return { locality, cityLevelLocality: cityLevel, state, country };
+}
+
+function buildLocationString(parsed) {
+  const { locality, state, country } = parsed;
+  let location = locality;
+  if (state) location += location ? `, ${state}` : state;
+  else if (country) location += location ? `, ${country}` : country;
+  return location || 'Unknown';
+}
+
+async function fetchReverse(lat, lon, zoom) {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=${zoom}&addressdetails=1`,
+    { headers: NOMINATIM_HEADERS }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return parseAddressFromResponse(data);
+}
+
 async function getLocationString() {
   if (!navigator.geolocation) {
     return 'Unknown';
@@ -43,46 +85,28 @@ async function getLocationString() {
   const lat = position.coords.latitude;
   const lon = position.coords.longitude;
 
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1`,
-    {
-      headers: {
-        Accept: 'application/json',
-        'Accept-Language': 'en',
-        'User-Agent': 'FlarumDrinkLog/1.0 (Flarum extension; geolocation for composer)',
-      },
+  let result = await fetchReverse(lat, lon, 10);
+  if (!result) return 'Unknown';
+
+  if (result.cityLevelLocality) {
+    return buildLocationString(result);
+  }
+
+  let fallback = buildLocationString(result);
+  for (const zoom of [12, 14, 18]) {
+    result = await fetchReverse(lat, lon, zoom);
+    if (!result) continue;
+    if (result.cityLevelLocality) {
+      return buildLocationString(result);
     }
-  );
-
-  if (!res.ok) return 'Unknown';
-  const data = await res.json();
-  const addr = data.address || {};
-
-  const locality =
-    addr.city ||
-    addr.town ||
-    addr.village ||
-    addr.hamlet ||
-    addr.suburb ||
-    addr.neighbourhood ||
-    addr.county ||
-    '';
-
-  const state = addr.state || addr.state_code || '';
-  const country = addr.country_code
-    ? addr.country_code.toUpperCase()
-    : (addr.country || '');
-
-  let location = locality;
-  if (state) location += location ? `, ${state}` : state;
-  else if (country) location += location ? `, ${country}` : country;
-
-  return location || 'Unknown';
+    fallback = buildLocationString(result);
+  }
+  return fallback || 'Unknown';
 }
 
 function replaceMarkerInValue(value, marker, replacement) {
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return value.replace(new RegExp(escaped + '\\s*'), marker + ' ' + replacement);
+  return value.replace(new RegExp(escaped + '[ \\t]*'), marker + ' ' + replacement);
 }
 
 function insertLocationAfterMarker(textarea, location, onChange) {
