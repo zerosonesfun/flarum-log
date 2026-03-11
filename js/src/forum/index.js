@@ -103,6 +103,25 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   const varietyObserver = new MutationObserver(() => attachToComposerTextareas());
   varietyObserver.observe(document.body, { childList: true, subtree: true });
 
+  function composerHasLogTag() {
+    const slug = String(app.forum.attribute('drinkLogTagSlug') || 'log').trim().toLowerCase();
+    if (!slug) return false;
+    const composer = document.querySelector('.Composer');
+    if (!composer) return false;
+    const withSlug = composer.querySelectorAll('[data-slug]');
+    return Array.prototype.some.call(withSlug, (el) => String(el.getAttribute('data-slug') || '').trim().toLowerCase() === slug);
+  }
+
+  document.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('.item-close');
+    if (!closeBtn) return;
+    if (!app.composer) return;
+    const visible = typeof app.composer.visible === 'function' ? app.composer.visible() : !!app.composer.visible;
+    if (!visible) return;
+    if (!composerHasLogTag()) return;
+    window.location.reload();
+  });
+
   flarumExtend(IndexPage.prototype, 'sidebarItems', function (items) {
     if (!app.session.user) return items;
 
