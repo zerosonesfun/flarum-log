@@ -10,6 +10,7 @@ import Button from 'flarum/common/components/Button';
 import DiscussionComposer from 'flarum/forum/components/DiscussionComposer';
 import DrinkLogsUserPage from './components/DrinkLogsUserPage';
 import { attachVarietyAutocomplete } from './components/VarietyAutocomplete';
+import { attachLocationFill } from './components/LocationFill';
 
 export const extend = [];
 
@@ -68,27 +69,34 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   }
 
   const VARIETY_ATTR = 'data-drink-log-variety-attached';
+  const LOCATION_ATTR = 'data-drink-log-location-attached';
   function isComposerTextarea(textarea) {
     if (!textarea || textarea.tagName !== 'TEXTAREA') return false;
     const composer = textarea.closest('.Composer, .ComposerBody, [class*="Composer"]');
     return !!composer;
   }
+  function composerOnChange(textarea, newText) {
+    if (app.composer.fields && typeof app.composer.fields.content === 'function') {
+      app.composer.fields.content(newText);
+    }
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  }
   function attachToComposerTextareas() {
     if (!app.forum || typeof app.forum.attribute !== 'function') return;
     const list = app.forum.attribute('drinkVarietyAutocompleteList');
-    let arr = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',').map((s) => s.trim()).filter(Boolean) : []);
-    if (arr.length === 0) return;
-    document.querySelectorAll('.Composer textarea, .ComposerBody textarea, [class*="Composer"] textarea').forEach((textarea) => {
-      if (!isComposerTextarea(textarea) || textarea.getAttribute(VARIETY_ATTR)) return;
-      textarea.setAttribute(VARIETY_ATTR, '1');
-      attachVarietyAutocomplete(textarea, arr, {
-        onChange(newText) {
-          if (app.composer.fields && typeof app.composer.fields.content === 'function') {
-            app.composer.fields.content(newText);
-          }
-          textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        },
+    const arr = Array.isArray(list) ? list : (typeof list === 'string' ? list.split(',').map((s) => s.trim()).filter(Boolean) : []);
+    const textareas = document.querySelectorAll('.Composer textarea, .ComposerBody textarea, [class*="Composer"] textarea');
+    if (arr.length > 0) {
+      textareas.forEach((textarea) => {
+        if (!isComposerTextarea(textarea) || textarea.getAttribute(VARIETY_ATTR)) return;
+        textarea.setAttribute(VARIETY_ATTR, '1');
+        attachVarietyAutocomplete(textarea, arr, { onChange: (newText) => composerOnChange(textarea, newText) });
       });
+    }
+    textareas.forEach((textarea) => {
+      if (!isComposerTextarea(textarea) || textarea.getAttribute(LOCATION_ATTR)) return;
+      textarea.setAttribute(LOCATION_ATTR, '1');
+      attachLocationFill(textarea, { onChange: (newText) => composerOnChange(textarea, newText) });
     });
   }
   attachToComposerTextareas();

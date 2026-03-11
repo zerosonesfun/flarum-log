@@ -18,21 +18,31 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     }
   }
 
-  /** Get caret position in viewport (px) using textarea-caret (same approach as Flarum core). */
+  /** Get caret position in viewport (px) and line height using textarea-caret. */
   function getCaretPixelPosition(cursorOffset) {
     const rect = textarea.getBoundingClientRect();
     const coords = getCaretCoordinates(textarea, cursorOffset);
     return {
       left: rect.left + coords.left - textarea.scrollLeft,
       top: rect.top + coords.top - textarea.scrollTop,
+      height: coords.height,
     };
   }
 
+  /** Baseline alignment: ratio of line height from top to baseline (font-typical). */
+  const BASELINE_RATIO = 0.82;
+
   function positionGhostAtCaret() {
     if (!suggestionEl || !currentSuggestion) return;
-    const { left, top } = getCaretPixelPosition(currentSuggestion.endOffset);
+    const { left, top, height: caretHeight } = getCaretPixelPosition(currentSuggestion.endOffset);
     suggestionEl.style.left = left + 'px';
-    suggestionEl.style.top = (top - 1.7) + 'px';
+    if (caretHeight != null && caretHeight > 0 && suggestionEl.offsetHeight) {
+      const ghostHeight = suggestionEl.getBoundingClientRect().height;
+      const topAligned = top + (caretHeight - ghostHeight) * BASELINE_RATIO;
+      suggestionEl.style.top = (topAligned - 1.7) + 'px';
+    } else {
+      suggestionEl.style.top = (top - 1.7) + 'px';
+    }
   }
 
   function showSuggestion(suffix) {
@@ -43,6 +53,7 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     }
     if (!suffix || !currentSuggestion) return;
 
+    const style = window.getComputedStyle(textarea);
     suggestionEl = document.createElement('span');
     suggestionEl.className = 'VarietyAutocomplete-ghost';
     suggestionEl.textContent = suffix;
@@ -53,6 +64,10 @@ export function attachVarietyAutocomplete(textarea, list, options) {
     suggestionEl.style.cursor = 'pointer';
     suggestionEl.style.color = '#666';
     suggestionEl.style.whiteSpace = 'pre';
+    suggestionEl.style.fontFamily = style.fontFamily;
+    suggestionEl.style.fontSize = style.fontSize;
+    suggestionEl.style.lineHeight = style.lineHeight;
+    suggestionEl.style.letterSpacing = style.letterSpacing;
     positionGhostAtCaret();
 
     suggestionEl.addEventListener('mousedown', (e) => {
