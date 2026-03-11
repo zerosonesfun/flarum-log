@@ -106,24 +106,56 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
   const varietyObserver = new MutationObserver(() => attachToComposerTextareas());
   varietyObserver.observe(document.body, { childList: true, subtree: true });
 
+  const CLOSE_BOUND_ATTR = 'data-drink-log-close-bound';
+
   function composerHasLogTag() {
     const slug = String(app.forum.attribute('drinkLogTagSlug') || 'log').trim().toLowerCase();
     if (!slug) return false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('primary_tag') && String(params.get('primary_tag')).trim().toLowerCase() === slug) return true;
+    } catch (_) {}
     const composer = document.querySelector('.Composer');
     if (!composer) return false;
     const withSlug = composer.querySelectorAll('[data-slug]');
     return Array.prototype.some.call(withSlug, (el) => String(el.getAttribute('data-slug') || '').trim().toLowerCase() === slug);
   }
 
-  document.addEventListener('click', (e) => {
-    const closeBtn = e.target.closest('.item-close');
-    if (!closeBtn) return;
-    if (!app.composer) return;
+  function shouldRefreshOnClose() {
+    if (!app.composer) return false;
     const visible = typeof app.composer.visible === 'function' ? app.composer.visible() : !!app.composer.visible;
-    if (!visible) return;
-    if (!composerHasLogTag()) return;
+    if (!visible) return false;
+    return composerHasLogTag();
+  }
+
+  function onCloseClick() {
+    if (!shouldRefreshOnClose()) return;
     window.location.reload();
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.item-close')) return;
+    onCloseClick();
+  }, true);
+
+  function bindCloseButton(el) {
+    if (el.getAttribute(CLOSE_BOUND_ATTR)) return;
+    el.setAttribute(CLOSE_BOUND_ATTR, '1');
+    el.addEventListener('click', onCloseClick, true);
+  }
+
+  const closeObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (node.matches && node.matches('.item-close')) bindCloseButton(node);
+        const list = node.querySelectorAll && node.querySelectorAll('.item-close');
+        if (list) list.forEach(bindCloseButton);
+      }
+    }
   });
+  closeObserver.observe(document.body, { childList: true, subtree: true });
+  document.querySelectorAll('.item-close').forEach(bindCloseButton);
 
   // Flarum 2.0: IndexPage.prototype.sidebarItems → IndexSidebar.prototype.items
   flarumExtend(IndexSidebar.prototype, 'items', function (items) {
