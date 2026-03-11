@@ -11,8 +11,16 @@ const LOCATION_MARKER = '`Location`';
 const DATE_ATTR = 'data-drink-log-date-filled';
 const TIME_ATTR = 'data-drink-log-time-filled';
 const LOCATION_ATTR = 'data-drink-log-location-handled';
+const LOCATION_FOCUS_ATTR = 'data-drink-log-location-focus-tried';
 
 let cachedLocation = null;
+
+function locationSlotIsEmpty(value) {
+  if (!value || !value.includes(LOCATION_MARKER)) return false;
+  const escaped = LOCATION_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = value.match(new RegExp(escaped + '[ \\t]*([\\s\\S]*)'));
+  return match ? match[1].trim().length === 0 : false;
+}
 
 function getDateString() {
   const d = new Date();
@@ -147,25 +155,26 @@ function scheduleCheck(textarea, onChange) {
   });
 }
 
-function tryPopulateLocation(textarea, onChange) {
-  if (!textarea || textarea.getAttribute(LOCATION_ATTR)) return;
-  if (!textarea.value.includes(LOCATION_MARKER)) return;
-
-  textarea.setAttribute(LOCATION_ATTR, '1');
-
+function doPopulateLocation(textarea, onChange) {
+  if (!textarea || !textarea.value.includes(LOCATION_MARKER)) return;
   if (cachedLocation) {
     insertLocationAfterMarker(textarea, cachedLocation, onChange);
     return;
   }
-
   getLocationString()
     .then((location) => {
       cachedLocation = location;
       insertLocationAfterMarker(textarea, location, onChange);
     })
-    .catch(() => {
-      // User denied or error: don't insert, don't ask again in this composer
-    });
+    .catch(() => {});
+}
+
+function tryPopulateLocation(textarea, onChange) {
+  if (!textarea || textarea.getAttribute(LOCATION_ATTR)) return;
+  if (!textarea.value.includes(LOCATION_MARKER)) return;
+
+  textarea.setAttribute(LOCATION_ATTR, '1');
+  doPopulateLocation(textarea, onChange);
 }
 
 /**
@@ -188,7 +197,16 @@ export function attachLocationFill(textarea, options) {
   const onInput = () => scheduleCheck(textarea, boundOnChange);
   textarea.addEventListener('input', onInput);
 
+  function onFocusIn() {
+    if (!locationSlotIsEmpty(textarea.value)) return;
+    if (textarea.getAttribute(LOCATION_FOCUS_ATTR)) return;
+    textarea.setAttribute(LOCATION_FOCUS_ATTR, '1');
+    doPopulateLocation(textarea, boundOnChange);
+  }
+  textarea.addEventListener('focusin', onFocusIn);
+
   return function detach() {
     textarea.removeEventListener('input', onInput);
+    textarea.removeEventListener('focusin', onFocusIn);
   };
 }
