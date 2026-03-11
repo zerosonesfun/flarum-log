@@ -44,7 +44,7 @@ async function getLocationString() {
   const lon = position.coords.longitude;
 
   const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
+    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1`,
     {
       headers: {
         Accept: 'application/json',
