@@ -38,7 +38,7 @@ class DecrementDrinkLogOnDiscussionHidden
             return;
         }
 
-        // Check from Tag side: tag with this slug has this discussion (works even if discussion state is odd)
+        // Check from Tag side: tag with this slug has this discussion
         $hasLogTag = \Flarum\Tags\Tag::query()
             ->where('slug', $tagSlug)
             ->whereHas('discussions', fn ($q) => $q->where('discussions.id', $discussion->id))

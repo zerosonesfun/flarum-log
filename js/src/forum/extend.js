@@ -1,2 +1,2 @@
-// Route is registered in index.js so DrinkLogsUserPage class is in the same scope (avoids "not a constructor" in bundle).
+// Route is registered in index.js via app.routes (same pattern as custom-profile-page).
 export default [];

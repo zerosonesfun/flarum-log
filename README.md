@@ -2,7 +2,7 @@
 
 A [Flarum](https://flarum.org/) extension that adds a **Drinking** button, tracks who’s drinking (live count + per-user totals), and opens a dated log discussion with an optional **Log** tag.
 
-- **Compatible:** Flarum 1.8.x  
+- **Compatible:** Flarum 2.0  
 - **Install:** `composer require zerosonesfun/flarum-log:"*"`  
 - **Best experience:** Install [FoF Direct Links](https://github.com/FriendsOfFlarum/direct-links) so the composer opens with title, Log tag, and a simple body template already filled in.
 
@@ -14,8 +14,7 @@ A [Flarum](https://flarum.org/) extension that adds a **Drinking** button, track
 - **One click does two things:**
   1. Records your “drinking” click (live count + your **profile total**).
   2. Opens the **new discussion** composer with title `Log - MM/DD/YYYY` and, when configured, the **Log** tag. With **FoF Direct Links**, the composer also opens with a small body template (Date, Time, Location, Amount, Variety).
-- **Profile total:** Each user’s public profile shows their total drinks (e.g. “1 drink” or “1.5k drinks”). It increases when they use the button (after cooldown) or when they **manually** create a discussion and add the Log tag, and **decreases by 1** when they delete one of their own discussions that has the Log tag.
-- **Profile “Drink Logs” tab:** On a user’s profile, a **Drink Logs** nav item appears under **Posts** (when Tags is enabled and a Log tag is configured). It shows the number of discussions they’ve created with the Log tag; clicking it loads a list of those discussions.
+- **Profile total:** Each user’s public profile shows their total drinks (e.g. “1 drink” or “1.5k drinks”). This total only goes up: it increases when they use the button (after cooldown) or when they **manually** create a discussion and add the Log tag.
 - **Manual Log tag:** If someone starts a new discussion and adds the Log tag in the composer (without using the Drinking button), their profile total still increases by 1.
 
 ## Installation
@@ -69,23 +68,6 @@ npm run build
 ```
 
 This updates `js/dist/forum.js` and `js/dist/admin.js`. Commit those files if you ship a pre-built bundle.
-
-## Troubleshooting
-
-**“Drink Logs” tab doesn’t appear on user profiles**
-
-The tab only shows when the forum has a valid Log tag. Check:
-
-1. **Tags extension** is enabled (Administration → Extensions).
-2. **A tag exists** whose slug matches Drink Log’s “Log tag slug” (default `log`). Create it under Administration → Tags if needed.
-3. **Clear Flarum cache** so the forum payload includes the tag id:  
-   `php flarum cache:clear`  
-   Then hard-refresh the forum (Ctrl+F5 / Cmd+Shift+R).
-4. If you installed from source (e.g. git), run `npm run build` in the extension’s `js` folder and deploy the updated `js/dist/forum.js`.
-
-**Profile drink total doesn’t decrease when a user deletes a log discussion**
-
-The extension now listens for both **Deleting** (hard delete) and **Hidden** (soft delete / “delete” in the UI). After updating, hiding or deleting a discussion that has the Log tag will decrement the author’s total. Clear cache and refresh; if it still doesn’t update, confirm the discussion had the Log tag and the Tags extension is enabled.
 
 ## Security
 

@@ -1,6 +1,6 @@
 # Drink Log – Flarum 2.0 compatibility
 
-This folder contains the **Flarum 2.0**-oriented version of the extension. The parent directory remains the **Flarum 1.8** version and must not be changed for 1.8 compatibility.
+This repository is the **Flarum 2.0** version of the extension.
 
 ## What was updated for 2.0
 
@@ -22,14 +22,13 @@ This folder contains the **Flarum 2.0**-oriented version of the extension. The p
 ### Migrations
 - No changes. The existing migrations (including the Builder `up`/`down` format for the FK) should still run on 2.0.
 
-## How to use this folder
+## How to use this repository
 
-- Use this **2.0** folder as the source when building or packaging the extension **for Flarum 2.0** (e.g. copy or symlink into a 2.0 project, or point your 2.0 composer package at this tree).
-- Do **not** replace the parent (1.8) files with these; keep both versions so 1.8 and 2.0 can be supported from the same repo.
+- This tree is the extension source for **Flarum 2.0**. Install or develop it from the repository root.
 
 ## When 2.0 is released
 
 1. Confirm **extend.php** namespaces: `Flarum\Api\Resource\ForumResource`, `Flarum\Api\Resource\UserResource`, `Flarum\Api\Schema`, `Flarum\Api\Context` (per official 2.x docs).
 2. Confirm **forum JS** import paths: `ext:flarum/forum/...` and component names (e.g. `IndexSidebar`).
 3. Test **openLogComposer** with the real 2.0 IndexSidebar/page structure and fix `newDiscussionAction()` context if needed.
-4. Run **npm install** and **npm run build** in **2.0/js** against the 2.0 toolchain and fix any webpack/import errors.
+4. Run **npm install** and **npm run build** in **js** against the 2.0 toolchain and fix any webpack/import errors.

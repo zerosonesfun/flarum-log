@@ -28,8 +28,7 @@ class DecrementDrinkLogOnDiscussionHideInSaving
             return;
         }
 
-        // Detect: discussion is being hidden. Frontend sends PATCH with attributes.isHidden = true.
-        // data may be at $event->data['attributes'] or $event->data['data']['attributes'] (JSON:API wrapper).
+        // Detect: discussion is being hidden. data may be at attributes or data.attributes (JSON:API).
         $wasHidden = $discussion->getOriginal('hidden_at');
         $attrs = $event->data['attributes'] ?? $event->data['data']['attributes'] ?? [];
         $requestSaysHidden = ($attrs['isHidden'] === true || $attrs['isHidden'] === 'true'

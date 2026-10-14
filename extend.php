@@ -2,24 +2,26 @@
 
 namespace ZerosOnesFun\Drinks;
 
+use Flarum\Api\Context;
 use Flarum\Discussion\Event\Saving;
 use Flarum\Extend;
-use Flarum\Api\Serializer\ForumSerializer;
-use Flarum\Api\Serializer\UserSerializer;
+use Flarum\User\User;
 use ZerosOnesFun\Drinks\DrinkClick;
 
-$eventExtender = (new Extend\Event())
-    ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
-    ->listen(Saving::class, Listeners\DecrementDrinkLogOnDiscussionHideInSaving::class)
-    ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
-    ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class)
-    ->listen(\Flarum\Post\Event\Deleted::class, Listeners\DecrementDrinkLogOnPostDeleted::class);
-if (class_exists(\Flarum\Discussion\Event\Hiding::class)) {
-    $eventExtender->listen(\Flarum\Discussion\Event\Hiding::class, Listeners\DecrementDrinkLogOnDiscussionHiding::class);
-}
-
 return [
-    $eventExtender,
+    (function () {
+        $e = (new Extend\Event())
+            ->listen(Saving::class, Listeners\AttachLogTagToDiscussion::class)
+            ->listen(Saving::class, Listeners\DecrementDrinkLogOnDiscussionHideInSaving::class)
+            ->listen(\Flarum\Discussion\Event\Deleting::class, Listeners\DecrementDrinkLogOnDiscussionDelete::class)
+            ->listen(\Flarum\Discussion\Event\Hidden::class, Listeners\DecrementDrinkLogOnDiscussionHidden::class)
+            ->listen(\Flarum\Post\Event\Deleted::class, Listeners\DecrementDrinkLogOnPostDeleted::class);
+        if (class_exists(\Flarum\Discussion\Event\Hiding::class)) {
+            $e->listen(\Flarum\Discussion\Event\Hiding::class, Listeners\DecrementDrinkLogOnDiscussionHiding::class);
+        }
+        return $e;
+    })(),
+
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
         ->css(__DIR__ . '/less/forum.less')
@@ -42,52 +44,63 @@ return [
         ->serializeToForum('drinkCooldownMinutes', 'zerosonesfun-flarum-log.cooldown_minutes', null, '30')
         ->serializeToForum('drinkLogTagSlug', 'zerosonesfun-flarum-log.log_tag_slug', null, 'log'),
 
-    (new Extend\ApiSerializer(ForumSerializer::class))
-        ->attribute('drinkCount', function (ForumSerializer $serializer) {
-            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-            $minutes = (int) $settings->get('zerosonesfun-flarum-log.cooldown_minutes', 30) ?: 30;
-            $minutes = max(1, min(1440, $minutes));
-            return DrinkClick::currentCount($minutes);
-        })
-        ->attribute('drinkDirectLinksEnabled', function (ForumSerializer $serializer) {
-            $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
-            return $extensions->isEnabled('fof-direct-links');
-        })
-        ->attribute('drinkLogTagId', function (ForumSerializer $serializer) {
-            $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
-            if (!$extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
-                return null;
-            }
-            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-            $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
-            if ($tagSlug === '') {
-                return null;
-            }
-            $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
+    // Flarum 2.0: ApiSerializer removed; use ApiResource + Flarum\Api\Schema (see docs.flarum.org/2.x/extend/update-2_0 and update-2_0-api).
+    (new Extend\ApiResource(\Flarum\Api\Resource\ForumResource::class))
+        ->fields(fn () => [
+            \Flarum\Api\Schema\Number::make('drinkCount')
+                ->get(function (object $forum, Context $context) {
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $minutes = (int) $settings->get('zerosonesfun-flarum-log.cooldown_minutes', 30) ?: 30;
+                    $minutes = max(1, min(1440, $minutes));
+                    return DrinkClick::currentCount($minutes);
+                }),
+            \Flarum\Api\Schema\Boolean::make('drinkDirectLinksEnabled')
+                ->get(function (object $forum, Context $context) {
+                    $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
+                    return $extensions->isEnabled('fof-direct-links');
+                }),
+            \Flarum\Api\Schema\Number::make('drinkLogTagId')
+                ->get(function (object $forum, Context $context) {
+                    $extensions = resolve(\Flarum\Extension\ExtensionManager::class);
+                    if (!$extensions->isEnabled('flarum-tags') || !class_exists(\Flarum\Tags\Tag::class)) {
+                        return null;
+                    }
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+                    if ($tagSlug === '') {
+                        return null;
+                    }
+                    $tag = \Flarum\Tags\Tag::query()->where('slug', $tagSlug)->first();
 
-            return $tag ? (int) $tag->id : null;
-        })
-        ->attribute('drinkVarietyAutocompleteList', function (ForumSerializer $serializer) {
-            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-            $raw = trim((string) $settings->get('zerosonesfun-flarum-log.variety_autocomplete_list', ''));
-            if ($raw === '') {
-                return [];
-            }
-            $list = array_map('trim', explode(',', $raw));
-            return array_values(array_filter($list, fn ($s) => $s !== ''));
-        }),
+                    return $tag ? (int) $tag->id : null;
+                }),
+            \Flarum\Api\Schema\Arr::make('drinkVarietyAutocompleteList')
+                ->get(function (object $forum, Context $context) {
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $raw = trim((string) $settings->get('zerosonesfun-flarum-log.variety_autocomplete_list', ''));
+                    if ($raw === '') {
+                        return [];
+                    }
+                    $list = array_map('trim', explode(',', $raw));
+                    return array_values(array_filter($list, fn ($s) => $s !== ''));
+                }),
+        ]),
 
-    (new Extend\ApiSerializer(UserSerializer::class))
-        ->attribute('drinkLogTotal', function (UserSerializer $serializer, $user) {
-            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-            $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
-            return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
-        })
-        ->attribute('drinkLogDiscussionsCount', function (UserSerializer $serializer, $user) {
-            $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
-            $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
-            return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
-        }),
+    (new Extend\ApiResource(\Flarum\Api\Resource\UserResource::class))
+        ->fields(fn () => [
+            \Flarum\Api\Schema\Number::make('drinkLogTotal')
+                ->get(function (User $user, Context $context) {
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+                    return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
+                }),
+            \Flarum\Api\Schema\Number::make('drinkLogDiscussionsCount')
+                ->get(function (User $user, Context $context) {
+                    $settings = resolve(\Flarum\Settings\SettingsRepositoryInterface::class);
+                    $tagSlug = trim((string) $settings->get('zerosonesfun-flarum-log.log_tag_slug', 'log'));
+                    return DrinkClick::discussionCountWithLogTag((int) $user->id, $tagSlug);
+                }),
+        ]),
 
     (new Extend\Locales(__DIR__ . '/locale')),
 ];

@@ -8,8 +8,7 @@ use Flarum\Settings\SettingsRepositoryInterface;
 use ZerosOnesFun\Drinks\DrinkClick;
 
 /**
- * Fired *before* the discussion is actually hidden. Most reliable place to decrement:
- * discussion still exists, not yet hidden, we can check tags and decrement.
+ * Fired *before* the discussion is actually hidden. Most reliable place to decrement.
  */
 class DecrementDrinkLogOnDiscussionHiding
 {
