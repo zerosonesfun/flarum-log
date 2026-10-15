@@ -1,7 +1,7 @@
 /**
  * Flarum 2.0: Admin entry. Settings are registered via extend.js (Extend.Admin().setting()).
  */
-import app from 'ext:flarum/admin/app';
+import app from 'flarum/admin/app';
 
 export { default as extend } from './extend';
 

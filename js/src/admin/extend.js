@@ -1,8 +1,8 @@
 /**
  * Flarum 2.0: Admin extender. app.extensionData is removed; register settings via Extend.Admin().
  */
-import Extend from 'ext:flarum/common/extend';
-import app from 'ext:flarum/admin/app';
+import Extend from 'flarum/common/extenders';
+import app from 'flarum/admin/app';
 
 export default [
   new Extend.Admin()

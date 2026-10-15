@@ -1,28 +1,38 @@
 /**
- * Flarum 2.0: ext: imports; IndexPage.sidebarItems → IndexSidebar.items.
+ * Flarum 2.0: core imports use flarum/… (ext: is only for other extensions).
+ * IndexPage.sidebarItems → IndexSidebar.items.
+ * UserPage is code-split, so DrinkLogsUserPage is loaded only after that chunk.
  */
-import app from 'ext:flarum/forum/app';
-import { extend as flarumExtend, override } from 'ext:flarum/common/extend';
-import Discussion from 'ext:flarum/common/models/Discussion';
-import IndexSidebar from 'ext:flarum/forum/components/IndexSidebar';
-import HeaderSecondary from 'ext:flarum/forum/components/HeaderSecondary';
-import UserCard from 'ext:flarum/forum/components/UserCard';
-import UserPage from 'ext:flarum/forum/components/UserPage';
-import Link from 'ext:flarum/common/components/Link';
-import Button from 'ext:flarum/common/components/Button';
-import DiscussionComposer from 'ext:flarum/forum/components/DiscussionComposer';
-import DrinkLogsUserPage from './components/DrinkLogsUserPage';
+import app from 'flarum/forum/app';
+import { extend as flarumExtend, override } from 'flarum/common/extend';
+import Discussion from 'flarum/common/models/Discussion';
+import IndexSidebar from 'flarum/forum/components/IndexSidebar';
+import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
+import UserCard from 'flarum/forum/components/UserCard';
+import Link from 'flarum/common/components/Link';
+import Button from 'flarum/common/components/Button';
+import UserPageResolver from 'flarum/forum/resolvers/UserPageResolver';
 import { attachVarietyAutocomplete } from './components/VarietyAutocomplete';
 import { attachLocationFill } from './components/LocationFill';
 
 export const extend = [];
 
 app.initializers.add('zerosonesfun-flarum-log', () => {
-  // Register route at runtime (same pattern as custom-profile-page) so the component is a proper constructor.
-  app.routes['zerosonesfun.drink-logs'] = {
+  // UserPage, DiscussionList, and DiscussionListState live in a split chunk.
+  // Load that chunk before this page module evaluates `extends UserPage`.
+  const drinkLogsRoute = {
     path: '/u/:username/drink-logs',
-    component: DrinkLogsUserPage,
+    component: () =>
+      Promise.all([
+        import('flarum/forum/components/UserPage'),
+        import('flarum/forum/components/DiscussionList'),
+        import('flarum/forum/states/DiscussionListState'),
+      ]).then(() => import('./components/DrinkLogsUserPage')),
   };
+  if (typeof UserPageResolver === 'function') {
+    drinkLogsRoute.resolverClass = UserPageResolver;
+  }
+  app.routes['zerosonesfun.drink-logs'] = drinkLogsRoute;
   function abbreviateNumber(n) {
     const num = Number(n) || 0;
     if (num >= 1e6) {
@@ -203,7 +213,7 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     return items;
   });
 
-  flarumExtend(UserPage.prototype, 'navItems', function (items) {
+  flarumExtend('flarum/forum/components/UserPage', 'navItems', function (items) {
     const user = this.user;
     if (!user) return items;
     const count = Number(user.attribute('drinkLogDiscussionsCount')) || 0;
@@ -325,13 +335,17 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
         .catch(() => {});
       return;
     }
-    app.composer.load(DiscussionComposer, {
-      user: app.session.user,
-    });
-    app.composer.show();
-    if (app.composer.fields && typeof app.composer.fields.title === 'function') {
-      app.composer.fields.title(title);
-    }
-    m.redraw();
+    app.composer
+      .load(() => import('flarum/forum/components/DiscussionComposer'), {
+        user: app.session.user,
+      })
+      .then(() => {
+        app.composer.show();
+        if (app.composer.fields && typeof app.composer.fields.title === 'function') {
+          app.composer.fields.title(title);
+        }
+        m.redraw();
+      })
+      .catch(() => {});
   }
 });

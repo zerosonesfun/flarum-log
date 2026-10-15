@@ -2,10 +2,10 @@
  * Flarum 2.0: ext: imports. Shows discussions by this user that have the Log tag.
  * Mirrors core DiscussionsUserPage: pass filter + sort into DiscussionListState and call refresh().
  */
-import app from 'ext:flarum/forum/app';
-import UserPage from 'ext:flarum/forum/components/UserPage';
-import DiscussionList from 'ext:flarum/forum/components/DiscussionList';
-import DiscussionListState from 'ext:flarum/forum/states/DiscussionListState';
+import app from 'flarum/forum/app';
+import UserPage from 'flarum/forum/components/UserPage';
+import DiscussionList from 'flarum/forum/components/DiscussionList';
+import DiscussionListState from 'flarum/forum/states/DiscussionListState';
 
 export default class DrinkLogsUserPage extends UserPage {
   oninit(vnode) {
