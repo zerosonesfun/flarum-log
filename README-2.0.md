@@ -5,7 +5,7 @@ This repository is the **Flarum 2.0** version of the extension.
 ## What was updated for 2.0
 
 ### Backend (PHP)
-- **composer.json**: `flarum/core` ^2.0.0-beta, `php` ^8.2, `flarum-extension.category` added.
+- **composer.json**: `flarum/core` ^2.0, `php` ^8.2, `flarum-extension.category` added.
 - **extend.php**: `ApiSerializer` extenders removed. Forum and User attributes (`drinkCount`, `drinkDirectLinksEnabled`, `drinkLogTagId`, `drinkVarietyAutocompleteList`, `drinkLogTotal`, `drinkLogDiscussionsCount`) are added via `Extend\ApiResource(ForumResource::class)` and `Extend\ApiResource(UserResource::class)` with `->fields()` and **Flarum 2.0 API** types. Namespaces used: `Flarum\Api\Resource\ForumResource`, `Flarum\Api\Resource\UserResource`, `Flarum\Api\Schema` (Number, Boolean, Arr), `Flarum\Api\Context` — per [Updating for 2.0](https://docs.flarum.org/2.x/extend/update-2_0) and [Upgrading to 2.0 API Layer](https://docs.flarum.org/2.x/extend/update-2_0-api).
 - **Routes, Event, Settings, Frontend, Locales**: Unchanged; same extenders as 1.8.
 - **Controllers, Listener, Model**: No changes; they should still work on 2.0.
