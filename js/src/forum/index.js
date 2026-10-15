@@ -9,7 +9,7 @@ import Discussion from 'flarum/common/models/Discussion';
 import IndexSidebar from 'flarum/forum/components/IndexSidebar';
 import HeaderSecondary from 'flarum/forum/components/HeaderSecondary';
 import UserCard from 'flarum/forum/components/UserCard';
-import Link from 'flarum/common/components/Link';
+import LinkButton from 'flarum/common/components/LinkButton';
 import Button from 'flarum/common/components/Button';
 import UserPageResolver from 'flarum/forum/resolvers/UserPageResolver';
 import { attachVarietyAutocomplete } from './components/VarietyAutocomplete';
@@ -224,16 +224,9 @@ app.initializers.add('zerosonesfun-flarum-log', () => {
     const isActive = (app.current.get && app.current.get('routeName') === 'zerosonesfun.drink-logs') || path.indexOf('/drink-logs') !== -1;
     items.add(
       'drinkLogs',
-      <Link
-        href={href}
-        className={'DrinkLogNav-link' + (isActive ? ' DrinkLogNav-link--active' : '')}
-      >
-        <i className="fas fa-glass-whiskey DrinkLogNav-icon" />
-        <span className="DrinkLogNav-label">
-          {app.translator.trans('zerosonesfun-log.forum.drink_logs_nav_label')}
-        </span>
-        <span className="DrinkLogNav-count">{count}</span>
-      </Link>,
+      <LinkButton href={href} icon="fas fa-glass-whiskey" active={isActive}>
+        {app.translator.trans('zerosonesfun-log.forum.drink_logs_nav_label')} <span className="Button-badge">{count}</span>
+      </LinkButton>,
       75
     );
     return items;
